@@ -63,19 +63,48 @@ Two operations per shell applet:
 The generated script invokes `<binary> completion<shell> …` — an
 explicit first-token System selector, valid in every fw dispatch mode.
 
-## 4. Open questions (next discussion targets)
+## 4. Engine API (decided 2026-07-13; implementation pending)
 
-- Engine API shape: inputs (Introspector, applet id, words before
-  cursor), output candidate model (value, kind, description), error
-  semantics.
+`internal/engine`, see `engine.go`. Decisions:
+
+- **Single entry point** — `Complete(src, q) []Candidate` answers
+  everything: applet-name completion, argument names, declared value
+  domains, file/directory directives. The adapter never decides *what*
+  is being completed, only how to print it.
+- **`Source` is a locally-defined interface** (`Applets`, `Arguments`)
+  — the honest ledger of what the module needs from the core;
+  `*sxclifw.Introspector` satisfies it implicitly, tests use fakes.
+- **`Query{Applet, Words, Current}`** — the words-before-cursor
+  contract of the core Introspector is baked into the type system: the
+  half-typed token has its own field (`Current`), used only as a
+  filter prefix, never planned.
+- **`Kind` directives, declared not guessed** — `KindFiles`/`KindDirs`
+  are emitted only for fields with a declared `HintFile`/
+  `HintDirectory` (fw `FieldMetadata.Hint`, landed fw@4b7edd4 with the
+  core's own `--config` declaring `HintFile`). Undeclared plain string
+  values yield no candidates; the generated bash script uses
+  `complete -o default` so the shell's own file completion is the
+  natural fallback.
+- **No error return** — best-effort like the Introspector itself: a
+  shell script cannot render an error; an unanswerable query yields no
+  candidates. (Flagged for review: the earlier draft returned an
+  error.)
+
+Dependency note: requires the fw hint API — unreleased at the time of
+writing; `go.mod` carries `replace sxcli.dev/fw => ../sxcli-fw` until
+fw v0.1.1 is tagged, when the replace is dropped.
+
+## 5. Open questions (next discussion targets)
+
+- Engine implementation: state machine over Words (last-arg-expects-
+  value detection, `--` positional cutoff, bundled shorts, `=`-joined
+  values), slice repetition, prefix filtering rules.
 - Query argument protocol: how the script passes the target applet and
   words (`--applet <id>` + positionals? cursor index?), and how it
   behaves for single-applet binaries where no applet name is typed.
-- Completing the applet name itself in multi-applet binaries
-  (Introspector.Applets is already filtered to public applets).
-- File/path fallback: when a value has no Allowed domain, defer to the
-  shell's own file completion instead of guessing.
 - Script installation UX: document `eval "$(bin completionbash --script)"`
   vs writing to the shell's completion directory.
-- Testing: unit (z_) against a fake Introspector-shaped source vs
-  integration (x_) driving a real fw binary; golden files for scripts.
+- Testing: unit (z_) against a fake Source vs integration (x_) driving
+  a real fw binary; golden files for scripts.
+- Later: `HintServiceID` (or engine-side knowledge of the core's
+  disable/enable/override args) for service-id value completion.
