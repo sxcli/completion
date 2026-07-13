@@ -87,8 +87,11 @@ explicit first-token System selector, valid in every fw dispatch mode.
   natural fallback.
 - **No error return** — best-effort like the Introspector itself: a
   shell script cannot render an error; an unanswerable query yields no
-  candidates. (Flagged for review: the earlier draft returned an
-  error.)
+  candidates. (Confirmed 2026-07-13.)
+- **Service-id completion** — fields declared `HintServiceID` (fw
+  d7232f2; the core's `--disable`/`--enable` declare it, `--override`
+  does not — `from=to` pairs fit no honest hint) complete as
+  `KindValue` candidates drawn from `Source.Services()`.
 
 Dependency note: requires the fw hint API — unreleased at the time of
 writing; `go.mod` carries `replace sxcli.dev/fw => ../sxcli-fw` until
@@ -106,5 +109,5 @@ fw v0.1.1 is tagged, when the replace is dropped.
   vs writing to the shell's completion directory.
 - Testing: unit (z_) against a fake Source vs integration (x_) driving
   a real fw binary; golden files for scripts.
-- Later: `HintServiceID` (or engine-side knowledge of the core's
-  disable/enable/override args) for service-id value completion.
+- Later: completing `--override` values (understanding the `from=to`
+  pair form is engine-side knowledge, not a field hint).

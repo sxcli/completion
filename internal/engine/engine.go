@@ -35,6 +35,10 @@ type Source interface {
 	// registration order (Hidden and System applets are already
 	// filtered by the core).
 	Applets() []string
+	// Services returns the ids of every registered service — the
+	// candidate pool for values declared HintServiceID (the core's
+	// --disable and --enable).
+	Services() []string
 	// Arguments returns the closure-true argument schema the applet
 	// would have if invoked with args — the words BEFORE the cursor:
 	// a half-typed token passed as data would be planned as
@@ -67,7 +71,8 @@ const (
 	KindApplet Kind = iota
 	// KindArg is an argument name; Value carries the dashes ("--log-level", "-c").
 	KindArg
-	// KindValue is a value from a declared Allowed domain.
+	// KindValue is a value from a declared domain: an Allowed value,
+	// or a service id for fields declared HintServiceID.
 	KindValue
 	// KindFiles directs the adapter to emit the shell's native file
 	// completion (declared via HintFile; Value and Doc are empty).
