@@ -97,11 +97,38 @@ Dependency note: requires the fw hint API — unreleased at the time of
 writing; `go.mod` carries `replace sxcli.dev/fw => ../sxcli-fw` until
 fw v0.1.1 is tagged, when the replace is dropped.
 
-## 5. Open questions (next discussion targets)
+## 5. Engine implementation (decided + landed 2026-07-13)
 
-- Engine implementation: state machine over Words (last-arg-expects-
-  value detection, `--` positional cutoff, bundled shorts, `=`-joined
-  values), slice repetition, prefix filtering rules.
+`Complete` resolves the target like core dispatch (explicit `q.Applet`
+→ `SingleApplet()` — a core Introspector method added for exactly this,
+fw d302f36, because `Applets()` is public-only while a Hidden
+non-System applet still counts for the mode → bare first word as
+selector; no target + no words = completing the first word: public
+applet names). It then plans the schema via `Arguments(target, words)`
+and replays the words exactly as the parser would: `--` puts the
+cursor in positional land (silent), a non-bool long or final bundled
+short with no `=`-joined value leaves a pending value, consumed longs
+are recorded. Emission rules:
+
+- pending value → `Allowed` domain, else bool `true`/`false`
+  (reachable only through the `=` form — bools never consume the next
+  word, mirroring the parser), else the hint (`KindFiles`/`KindDirs`
+  directives; `HintServiceID` → `Services()`), else nothing (shell
+  default).
+- `Current` of the form `--name=prefix` → the semantic `=` split is
+  the engine's (parser semantics); adapters only reassemble
+  shell-mangled tokens. Value candidates are returned bare.
+- `Current` starting with `-` → long argument names only (shorts are
+  for people who know what they are doing), used scalars suppressed,
+  used slices still offered (repetition is their append mechanism),
+  `Doc` falling back to the usage one-liner.
+- fresh bare word → silent; the shell's own default (files) is the
+  honest fallback.
+
+Unit-tested in `z_engine_test.go` against a fake `Source`.
+
+## 6. Open questions (next discussion targets)
+
 - Query argument protocol: how the script passes the target applet and
   words (`--applet <id>` + positionals? cursor index?), and how it
   behaves for single-applet binaries where no applet name is typed.
