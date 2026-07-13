@@ -45,13 +45,16 @@ type Completion struct {
 // config is the wire protocol between the generated bash script and
 // the applet:
 //
-//	mybin completionbash --cword $COMP_CWORD -- "${COMP_WORDS[@]}"
+//	<cmd> completionbash [--applet <id>] --cword $COMP_CWORD -- "${COMP_WORDS[@]}"
 //
 // The raw COMP_WORDS arrive verbatim as positionals — command word
 // included, =-splits unrepaired — with COMP_CWORD locating the token
-// being completed. Everything is argument-only (env:"-"): the query is
-// per-keystroke transport, not configuration.
+// being completed. --applet is baked into the script at generation
+// time when the script was generated through an applet symlink; there
+// is no basename logic at query time. Everything is argument-only
+// (env:"-"): the query is per-keystroke transport, not configuration.
 type config struct {
-	Script bool `json:"script" arg:"script" env:"-" usage:"print the bash completion script to stdout and exit"`
-	CWord  int  `json:"cword" arg:"cword" env:"-" usage:"index of the word being completed within the raw completion words"`
+	Script bool   `json:"script" arg:"script" env:"-" usage:"print the bash completion script to stdout and exit"`
+	Applet string `json:"applet" arg:"applet" env:"-" usage:"target applet id baked by the generated script; empty means selector logic applies"`
+	CWord  int    `json:"cword" arg:"cword" env:"-" usage:"index of the word being completed within the raw completion words"`
 }

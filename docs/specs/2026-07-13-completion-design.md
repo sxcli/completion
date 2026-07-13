@@ -127,14 +127,53 @@ are recorded. Emission rules:
 
 Unit-tested in `z_engine_test.go` against a fake `Source`.
 
-## 6. Open questions (next discussion targets)
+## 6. Bash adapter (landed 2026-07-13)
 
-- Query argument protocol: how the script passes the target applet and
-  words (`--applet <id>` + positionals? cursor index?), and how it
-  behaves for single-applet binaries where no applet name is typed.
-- Script installation UX: document `eval "$(bin completionbash --script)"`
-  vs writing to the shell's completion directory.
-- Testing: unit (z_) against a fake Source vs integration (x_) driving
-  a real fw binary; golden files for scripts.
+Wire protocol — raw transport, smart Go; the script is deliberately
+dumb and never needs to change:
+
+    <cmd> completionbash [--applet <id>] --cword $COMP_CWORD -- "${COMP_WORDS[@]}"
+
+Raw COMP_WORDS as positionals (command word included, =-splits
+unrepaired), COMP_CWORD locating the cursor. The Go side drops word
+zero, reassembles the =-splits (bash's COMP_WORDBREAKS tears
+`--debug=fal` into three words; value candidates return bare because
+bash replaces only the post-= word), slices at the cursor and calls
+the engine. All fields env:"-": per-keystroke transport, not
+configuration. Queries always exit 0.
+
+`--script` generation happens THROUGH the name it serves — the
+basename decision is made once, at generation, never per keystroke:
+single-applet mode → nothing baked (any name runs the sole applet);
+basename names a public applet (busybox symlink farm) → `--applet`
+baked, mirroring dispatch rule 4; anything else — the real binary name
+included — keeps selector logic live, so `mybin cat /tmp/z<TAB>`
+completes via the engine's bare-first-word rule and an explicitly
+typed Hidden id still completes its arguments while never being
+offered by name. Note: generation cannot distinguish "real binary
+name" from "symlink to a hidden applet" (Applets is public-only, by
+design) and does not need to — selector-mode registration is exactly
+what dispatch honors for both, so the refusal case from the earlier
+draft dissolved. Installation: `eval "$(mybin completionbash
+--script)"` per name, one eval per symlink actually created — a
+single blanket registration for every applet id would hijack real
+commands' completions (cat!).
+
+Answer encoding: one candidate per line on stdout; KindFiles/KindDirs
+arrive as \001-sentinel lines the script maps to `compgen -f`/`-d`;
+`complete -o default` keeps undeclared values on the shell's own file
+completion. Unit-tested in `z_bash_test.go` (fake Source: reassembly,
+baked/selector queries, directives, script golden fragments);
+end-to-end smoke verified against a real fw binary.
+
+## 7. Open questions (next discussion targets)
+
+- zsh and fish adapters (thin: script template + description-carrying
+  answer encoding over the same engine).
+- Integration (x_) tests driving a real fw binary; golden files for
+  scripts.
+- Colon values: bash also splits COMP_WORDS on ":" — values like
+  ":8080" complete misleadingly; needs the __ltrim_colon_completions
+  treatment or ":"-aware reassembly.
 - Later: completing `--override` values (understanding the `from=to`
   pair form is engine-side knowledge, not a field hint).
