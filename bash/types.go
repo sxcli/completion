@@ -45,16 +45,23 @@ type Completion struct {
 // config is the wire protocol between the generated bash script and
 // the applet:
 //
-//	<cmd> completionbash [--applet <id>] --cword $COMP_CWORD -- "${COMP_WORDS[@]}"
+//	<cmd> completionbash [--applet <id>] --cword $COMP_CWORD \
+//	    --line "$COMP_LINE" --breaks "$COMP_WORDBREAKS" -- "${COMP_WORDS[@]}"
 //
 // The raw COMP_WORDS arrive verbatim as positionals — command word
-// included, =-splits unrepaired — with COMP_CWORD locating the token
-// being completed. --applet is baked into the script at generation
-// time when the script was generated through an applet symlink; there
-// is no basename logic at query time. Everything is argument-only
-// (env:"-"): the query is per-keystroke transport, not configuration.
+// included, :/=-splits unrepaired — with COMP_CWORD locating the token
+// being completed. COMP_LINE disambiguates glued separators from
+// spaced ones during reassembly ("--addr:8080" versus "--addr :8080");
+// COMP_WORDBREAKS tells which separators bash actually split on and
+// segments the word bash will replace. --applet is baked into the
+// script at generation time when the script was generated through an
+// applet symlink; there is no basename logic at query time. Everything
+// is argument-only (env:"-"): the query is per-keystroke transport,
+// not configuration.
 type config struct {
 	Script bool   `json:"script" arg:"script" env:"-" usage:"print the bash completion script to stdout and exit"`
 	Applet string `json:"applet" arg:"applet" env:"-" usage:"target applet id baked by the generated script; empty means selector logic applies"`
 	CWord  int    `json:"cword" arg:"cword" env:"-" usage:"index of the word being completed within the raw completion words"`
+	Line   string `json:"line" arg:"line" env:"-" usage:"the raw command line being completed (COMP_LINE)"`
+	Breaks string `json:"breaks" arg:"breaks" env:"-" usage:"the shell's word-break characters (COMP_WORDBREAKS)"`
 }

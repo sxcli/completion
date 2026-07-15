@@ -52,25 +52,48 @@ func demoInfos() []sxclifw.ArgInfo {
 	}
 }
 
+// ask builds the query config the generated script would send.
+func ask(applet string, cword int, line string) config {
+	return config{Applet: applet, CWord: cword, Line: line, Breaks: defaultBreaks}
+}
+
 func TestReassembleJoinsEqualsSplits(t *testing.T) {
-	words, cur := reassemble([]string{"bin", "--debug", "=", "fal"}, 3)
+	words, cur := reassemble([]string{"bin", "--debug", "=", "fal"}, 3, "bin --debug=fal", defaultBreaks)
 	if strings.Join(words, " ") != "bin --debug=fal" || cur != 1 {
 		t.Errorf("reassembly wrong: %v cur=%d", words, cur)
 	}
-	words, cur = reassemble([]string{"bin", "--tag", "=", ""}, 3)
+	words, cur = reassemble([]string{"bin", "--tag", "=", ""}, 3, "bin --tag=", defaultBreaks)
 	if strings.Join(words, " ") != "bin --tag=" || cur != 1 {
 		t.Errorf("trailing = reassembly wrong: %q cur=%d", words, cur)
 	}
-	words, cur = reassemble([]string{"bin", "--config", "x.json"}, 2)
+	words, cur = reassemble([]string{"bin", "--config", "x.json"}, 2, "bin --config x.json", defaultBreaks)
 	if strings.Join(words, " ") != "bin --config x.json" || cur != 2 {
 		t.Errorf("plain words must pass through: %v cur=%d", words, cur)
+	}
+}
+
+func TestReassembleColonUsesLineAdjacency(t *testing.T) {
+	// glued: unix:/dev/log is one token
+	words, cur := reassemble([]string{"bin", "--out", "unix", ":", "/dev/log"}, 4, "bin --out unix:/dev/log", defaultBreaks)
+	if strings.Join(words, " ") != "bin --out unix:/dev/log" || cur != 2 {
+		t.Errorf("glued colon reassembly wrong: %v cur=%d", words, cur)
+	}
+	// spaced: :8080 stands alone, separate from --addr
+	words, cur = reassemble([]string{"bin", "--addr", ":", "8080"}, 3, "bin --addr :8080", defaultBreaks)
+	if strings.Join(words, " ") != "bin --addr :8080" || cur != 2 {
+		t.Errorf("spaced colon reassembly wrong: %v cur=%d", words, cur)
+	}
+	// a shell with ":" removed from its breaks never split; passthrough
+	words, cur = reassemble([]string{"bin", "unix:/dev/log"}, 1, "bin unix:/dev/log", " \t\n\"'><=;|&(")
+	if strings.Join(words, " ") != "bin unix:/dev/log" || cur != 1 {
+		t.Errorf("colon-free breaks must pass words through: %v cur=%d", words, cur)
 	}
 }
 
 func TestAnswerBakedApplet(t *testing.T) {
 	src := &fakeSource{applets: []string{"cat", "ls"}, infos: demoInfos()}
 	var out bytes.Buffer
-	answer(&out, src, "cat", 1, []string{"cat", "--lo"})
+	answer(&out, src, ask("cat", 1, "cat --lo"), []string{"cat", "--lo"})
 	if src.asked != "cat" {
 		t.Errorf("baked applet not targeted: %q", src.asked)
 	}
@@ -82,7 +105,7 @@ func TestAnswerBakedApplet(t *testing.T) {
 func TestAnswerSelectorMode(t *testing.T) {
 	src := &fakeSource{applets: []string{"cat", "ls"}}
 	var out bytes.Buffer
-	answer(&out, src, "", 1, []string{"mybin", ""})
+	answer(&out, src, ask("", 1, "mybin "), []string{"mybin", ""})
 	if out.String() != "cat\nls\n" {
 		t.Errorf("applet-name completion wrong: %q", out.String())
 	}
@@ -91,7 +114,7 @@ func TestAnswerSelectorMode(t *testing.T) {
 func TestAnswerFileDirective(t *testing.T) {
 	src := &fakeSource{single: "solo", infos: demoInfos()}
 	var out bytes.Buffer
-	answer(&out, src, "", 2, []string{"solo", "--config", ""})
+	answer(&out, src, ask("", 2, "solo --config "), []string{"solo", "--config", ""})
 	if out.String() != "\x01files\n" {
 		t.Errorf("file directive wrong: %q", out.String())
 	}
@@ -100,10 +123,35 @@ func TestAnswerFileDirective(t *testing.T) {
 func TestAnswerEqualsValue(t *testing.T) {
 	src := &fakeSource{single: "solo", infos: demoInfos()}
 	var out bytes.Buffer
-	// bash tore --log-level=in into three words; cursor on the value
-	answer(&out, src, "", 3, []string{"solo", "--log-level", "=", "in"})
+	// bash tore --log-level=in into three words; cursor on the value.
+	// bash replaces only the post-= segment, so the value comes bare.
+	answer(&out, src, ask("", 3, "solo --log-level=in"), []string{"solo", "--log-level", "=", "in"})
 	if out.String() != "info\n" {
 		t.Errorf("= value completion wrong: %q", out.String())
+	}
+}
+
+func TestAnswerColonValueIsSegmentTrimmed(t *testing.T) {
+	src := &fakeSource{single: "solo", infos: []sxclifw.ArgInfo{
+		{Service: "solo", Long: "out", Usage: "sink", Type: stringT, Allowed: []any{"unix:/dev/log", "tcp:remote"}},
+	}}
+	var out bytes.Buffer
+	// typed: --out unix:/de<TAB>; bash's replaceable segment is "/de"
+	answer(&out, src, ask("", 4, "solo --out unix:/de"), []string{"solo", "--out", "unix", ":", "/de"})
+	if out.String() != "/dev/log\n" {
+		t.Errorf("colon segment trim wrong: %q", out.String())
+	}
+}
+
+func TestAnswerEqualsRebuiltWhenShellDoesNotBreakOnIt(t *testing.T) {
+	src := &fakeSource{single: "solo", infos: demoInfos()}
+	var out bytes.Buffer
+	// a shell whose breaks lack "=": the whole word gets replaced, so
+	// the full --name=value token must be printed
+	cfg := config{CWord: 1, Line: "solo --log-level=in", Breaks: " \t\n\"'><;|&(:"}
+	answer(&out, src, cfg, []string{"solo", "--log-level=in"})
+	if out.String() != "--log-level=info\n" {
+		t.Errorf("full-token rebuild wrong: %q", out.String())
 	}
 }
 
@@ -111,7 +159,7 @@ func TestAnswerCursorPastWords(t *testing.T) {
 	src := &fakeSource{single: "solo", infos: demoInfos()}
 	var out bytes.Buffer
 	// fresh word at end of line: cword beyond the transported words
-	answer(&out, src, "", 2, []string{"solo", "--config"})
+	answer(&out, src, ask("", 2, "solo --config "), []string{"solo", "--config"})
 	if out.String() != "\x01files\n" {
 		t.Errorf("pending value at fresh word wrong: %q", out.String())
 	}

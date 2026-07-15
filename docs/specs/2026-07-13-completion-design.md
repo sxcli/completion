@@ -166,14 +166,29 @@ completion. Unit-tested in `z_bash_test.go` (fake Source: reassembly,
 baked/selector queries, directives, script golden fragments);
 end-to-end smoke verified against a real fw binary.
 
+Colon/equals handling (2026-07-13): bash splits COMP_WORDS at every
+COMP_WORDBREAKS character — ":" and "=" included — so true tokens like
+`unix:/dev/log` arrive shredded, and COMP_WORDS alone cannot tell
+`--addr:8080` from `--addr :8080`. The protocol therefore carries
+`--line "$COMP_LINE"` and `--breaks "$COMP_WORDBREAKS"`, and
+`reassemble` is a faithful Go port of bash-completion's
+`_comp__reassemble_words`: the original line's whitespace decides
+glued-vs-spaced separators, separators never join word 0, and only
+characters actually present in the user's break set are excluded (a
+shell with ":" stripped from COMP_WORDBREAKS — the documented
+workaround — passes words through untouched). On output, bash replaces
+only the segment after the last break it split on, so `answer` prints
+candidates segment-relative (the `__ltrim_colon_completions`
+treatment, generalized): `unix:<TAB>` answers `/dev/log`, not
+`unix:/dev/log`, and a shell that does NOT break on "=" gets the full
+`--name=value` token rebuilt. Assumption: breaks default to bash's
+stock set when a query arrives without --breaks (manual invocation).
+
 ## 7. Open questions (next discussion targets)
 
 - zsh and fish adapters (thin: script template + description-carrying
   answer encoding over the same engine).
 - Integration (x_) tests driving a real fw binary; golden files for
   scripts.
-- Colon values: bash also splits COMP_WORDS on ":" — values like
-  ":8080" complete misleadingly; needs the __ltrim_colon_completions
-  treatment or ":"-aware reassembly.
 - Later: completing `--override` values (understanding the `from=to`
   pair form is engine-side knowledge, not a field hint).
