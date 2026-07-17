@@ -184,10 +184,36 @@ treatment, generalized): `unix:<TAB>` answers `/dev/log`, not
 `--name=value` token rebuilt. Assumption: breaks default to bash's
 stock set when a query arrives without --breaks (manual invocation).
 
-## 7. Open questions (next discussion targets)
+## 7. Zsh adapter (landed 2026-07-14)
 
-- zsh and fish adapters (thin: script template + description-carrying
-  answer encoding over the same engine).
+Same shape as bash over the same engine; the shell changes four
+things. Transport is SIMPLER — zsh tokenizes properly (no
+COMP_WORDBREAKS shredding, quotes honored), so there is no line, no
+breaks, no reassembly, and no output segmenting:
+
+    <cmd> completionzsh [--applet <id>] --cword $((CURRENT-1)) \
+        --current "$PREFIX" -- "${(@)words}"
+
+$PREFIX (the pre-cursor part of the current word) is exactly the
+engine's Current contract — better than bash, which only has the whole
+word. Answers are _describe-ready `value:description` lines (colons in
+values escaped), so the usage/Doc metadata finally renders — rendered
+through Tr(), the module's first translation consumer; long-form Doc
+is reduced to its first line. Directives stay the \001 sentinels
+(mapped to `_files` / `_files -/`); zero candidates → `_default`,
+mirroring bash's `-o default`. Registration via
+`eval "$(mybin completionzsh --script)"`, requires compinit.
+
+The --script baking decision (single-applet / busybox symlink /
+selector mode) moved to a shared package, `internal/script`, used by
+both adapters — the engine stays ignorant that script generation
+exists (Plamen's call: layering, engine = "what completes here" only).
+Unit tests in z_zsh_test.go; smoke-verified under a real zsh with
+stubbed _describe/_files/_default sourcing the generated script.
+
+## 8. Open questions (next discussion targets)
+
+- fish adapter (same shape; native descriptions, `complete -c`).
 - Integration (x_) tests driving a real fw binary; golden files for
   scripts.
 - Later: completing `--override` values (understanding the `from=to`
