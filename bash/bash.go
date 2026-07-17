@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"sxcli.dev/completion/internal/engine"
+	genscript "sxcli.dev/completion/internal/script"
 	sxclifw "sxcli.dev/fw"
 )
 
@@ -85,44 +86,16 @@ complete -o default -F %[2]s %[1]s
 `
 
 // script emits the registration for the name this binary was invoked
-// as — generation THROUGH a name decides for that name, once:
-//
-//   - single-applet mode: no baking; any name runs the sole applet and
-//     the engine resolves it per query.
-//   - the name is a public applet (a symlink in the busybox farm): the
-//     target is baked in as --applet; dispatch rule 4 would run
-//     exactly it.
-//   - anything else — the real binary's own name included: selector
-//     logic stays live, matching dispatch rules 3–4 (an explicitly
-//     typed applet id completes; names are offered from the public
-//     list only).
+// as; the baking decision (single-applet / busybox symlink / selector
+// mode) is the shared generation policy in internal/script.
 func script(w io.Writer, src engine.Source, argv0 string) {
 	name := strings.TrimSuffix(filepath.Base(argv0), ".exe")
 	baked := ""
-	if _, single := src.SingleApplet(); !single {
-		for _, id := range src.Applets() {
-			if id == name {
-				baked = " --applet " + name
-			}
-		}
+	if id := genscript.BakedApplet(src, name); id != "" {
+		baked = " --applet " + id
 	}
-	fn := "_sxcli_" + sanitize(name)
+	fn := "_sxcli_" + genscript.Sanitize(name)
 	fmt.Fprintf(w, scriptTemplate, name, fn, baked)
-}
-
-// sanitize turns an arbitrary command name into a bash function name
-// suffix.
-func sanitize(name string) string {
-	var b strings.Builder
-	for i := 0; i < len(name); i++ {
-		ch := name[i]
-		if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') {
-			b.WriteByte(ch)
-		} else {
-			b.WriteByte('_')
-		}
-	}
-	return b.String()
 }
 
 // answer serves one completion query: reassemble the words bash tore
