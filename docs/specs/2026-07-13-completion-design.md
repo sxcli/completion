@@ -51,6 +51,18 @@ public — it may be promoted to an exported package when a third-party
 shell package (powershell, elvish, …) materializes; foreign modules
 cannot reach another module's `internal/`.
 
+REVERSED 2026-07-14, before first publishing: `engine` and `script`
+are PUBLIC packages (`sxcli.dev/completion/engine`,
+`sxcli.dev/completion/script`). Rationale: the fish adapter was
+dropped from the roadmap (Plamen: not a shell he wants to support;
+community territory) — but "the community can build fish" is only
+true if the engine is reachable, and internal/ would have blocked
+third-party adapters until a breaking reshuffle. Published public
+from day one instead; the as-if-public discipline made the move a
+git mv. The layering rule is unchanged: the engine still does not
+know scripts exist — script (generation policy) is public alongside
+it so dispatch truth is never reimplemented per shell.
+
 ## 3. Applet contract (to be detailed)
 
 Two operations per shell applet:

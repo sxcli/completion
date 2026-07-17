@@ -21,8 +21,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"sxcli.dev/completion/internal/engine"
-	genscript "sxcli.dev/completion/internal/script"
+	"sxcli.dev/completion/engine"
+	genscript "sxcli.dev/completion/script"
 	sxclifw "sxcli.dev/fw"
 )
 
@@ -87,7 +87,7 @@ complete -o default -F %[2]s %[1]s
 
 // script emits the registration for the name this binary was invoked
 // as; the baking decision (single-applet / busybox symlink / selector
-// mode) is the shared generation policy in internal/script.
+// mode) is the shared generation policy in the script package.
 func script(w io.Writer, src engine.Source, argv0 string) {
 	name := strings.TrimSuffix(filepath.Base(argv0), ".exe")
 	baked := ""

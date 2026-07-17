@@ -13,13 +13,16 @@
 // limitations under the License.
 
 // Package engine computes completion candidates for sxcli.dev/fw
-// binaries from the core's Introspector. It is shell-agnostic: the
-// per-shell packages decode their shell's transport into a Query, call
-// Complete, and encode the Candidates in their shell's answer format.
+// binaries from the core's Introspector. It is shell-agnostic: a
+// shell adapter decodes its shell's transport into a Query, calls
+// Complete, and encodes the Candidates in its shell's answer format.
 // All completion logic lives here, exactly once.
 //
-// The package is internal for now but its API is written as if public;
-// it may be promoted when third-party shell packages materialize.
+// This is the public API for third-party shell adapters (fish,
+// PowerShell, elvish, …): implement the transport and the encoding,
+// and the engine answers what completes — the bash and zsh packages
+// in this module are the reference implementations. The generation
+// policy for --script emission lives in the sibling script package.
 package engine
 
 import (

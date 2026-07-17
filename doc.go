@@ -26,7 +26,10 @@
 //	    _ "sxcli.dev/completion/zsh"
 //	)
 //
-// The shared candidate computation lives in an internal engine package;
-// the per-shell packages are thin adapters owning only their
-// registration script template and answer encoding.
+// The shared candidate computation is the public engine package and
+// the --script generation policy is the public script package; the
+// per-shell packages are thin adapters owning only their registration
+// script template and answer encoding. Third-party shell adapters
+// build on the same two packages — see the engine package
+// documentation.
 package completion

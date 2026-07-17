@@ -22,5 +22,7 @@ Same house rules as sxcli-fw:
   an explicit go.
 - The living spec is `docs/specs/2026-07-13-completion-design.md`;
   every decision lands there.
-- The engine stays in `internal/` for now but its API is written as if
-  public — it may be promoted once third-party shells appear.
+- `engine` and `script` are PUBLIC API (promoted 2026-07-14, before
+  first publishing): third-party shell adapters build on them. API
+  changes there are ecosystem-facing — design discussion first,
+  always.

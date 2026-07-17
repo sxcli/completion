@@ -15,12 +15,13 @@
 // Package script holds the generation policy shared by the shell
 // adapters — the parts of --script emission that are about the
 // framework's dispatch semantics, not about any shell. The engine
-// stays ignorant of script generation; the adapters own their
-// templates and encodings and come here for the decisions.
+// stays ignorant of script generation; the adapters (third-party ones
+// included) own their templates and encodings and come here for the
+// decisions, so dispatch truth is never reimplemented per shell.
 package script
 
 import (
-	"sxcli.dev/completion/internal/engine"
+	"sxcli.dev/completion/engine"
 )
 
 // BakedApplet decides the --applet value a generated script bakes in
