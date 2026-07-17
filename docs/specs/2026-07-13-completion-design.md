@@ -214,11 +214,12 @@ stubbed _describe/_files/_default sourcing the generated script.
 ## 8. Open questions (next discussion targets)
 
 - fish adapter (same shape; native descriptions, `complete -c`).
-- Integration (x_) tests: bash DONE (x_bash_test.go, 2026-07-14 — the
-  test binary re-execs itself as a real fw application via fw's
-  personality pattern; six wire-level query assertions plus one test
-  sourcing the generated script under a real bash with a stubbed
-  `complete` and reading COMPREPLY); zsh still pending the same
-  treatment (zpty or stub-harness under `zsh -f`).
+- Integration (x_) tests: bash AND zsh DONE (x_bash_test.go +
+  x_zsh_test.go, 2026-07-14 — the test binary re-execs itself as a
+  real fw application via fw's personality pattern; six wire-level
+  query assertions each, plus one test per shell sourcing the
+  generated script under the real shell with stubbed completion
+  machinery — bash reads COMPREPLY, zsh reads the _describe pairs;
+  skipped cleanly when the shell is absent).
 - Later: completing `--override` values (understanding the `from=to`
   pair form is engine-side knowledge, not a field hint).
