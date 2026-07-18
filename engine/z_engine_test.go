@@ -19,14 +19,14 @@ import (
 	"strings"
 	"testing"
 
-	sxclifw "sxcli.dev/fw"
+	"sxcli.dev/fw"
 )
 
 type fakeSource struct {
 	applets  []string
 	single   string // "" = multi-applet mode
 	services []string
-	infos    []sxclifw.ArgInfo
+	infos    []fw.ArgInfo
 	asked    string // applet id Arguments was called with
 }
 
@@ -35,7 +35,7 @@ func (s *fakeSource) Services() []string { return s.services }
 func (s *fakeSource) SingleApplet() (string, bool) {
 	return s.single, s.single != ""
 }
-func (s *fakeSource) Arguments(appletID string, args []string) ([]sxclifw.ArgInfo, error) {
+func (s *fakeSource) Arguments(appletID string, args []string) ([]fw.ArgInfo, error) {
 	s.asked = appletID
 	return s.infos, nil
 }
@@ -47,10 +47,10 @@ var (
 
 // schema resembling: app with --config,-c (file), --log-level (enum),
 // --tag (slice), --debug (bool), --disable (service ids)
-func demoInfos() []sxclifw.ArgInfo {
-	return []sxclifw.ArgInfo{
-		{Service: "core", Long: "config", Short: "c", Usage: "config path", Type: stringT, Hint: sxclifw.HintFile},
-		{Service: "core", Long: "disable", Usage: "drop services", Type: stringT, IsSlice: true, Hint: sxclifw.HintServiceID},
+func demoInfos() []fw.ArgInfo {
+	return []fw.ArgInfo{
+		{Service: "core", Long: "config", Short: "c", Usage: "config path", Type: stringT, Hint: fw.HintFile},
+		{Service: "core", Long: "disable", Usage: "drop services", Type: stringT, IsSlice: true, Hint: fw.HintServiceID},
 		{Service: "app", Long: "log-level", Usage: "verbosity", Type: stringT, Allowed: []any{"debug", "info", "warn"}},
 		{Service: "app", Long: "tag", Usage: "labels", Type: stringT, IsSlice: true},
 		{Service: "app", Long: "debug", Usage: "diagnostics", Type: boolT},
@@ -134,6 +134,11 @@ func TestPendingServiceIDsFromRegistry(t *testing.T) {
 	got := Complete(src, Query{Words: []string{"--disable"}, Current: "lo"})
 	if vals(got) != "logfile" || got[0].Kind != KindValue {
 		t.Errorf("service id completion wrong: %v", got)
+	}
+	// the synthesized core leads Services() but is never a candidate:
+	// nobody can disable, enable or override the core
+	if got := Complete(src, Query{Words: []string{"--disable"}}); vals(got) != "logfile,solo" {
+		t.Errorf("core must be filtered from service references: %v", got)
 	}
 }
 

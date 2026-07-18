@@ -23,28 +23,33 @@ import (
 
 	"sxcli.dev/completion/engine"
 	genscript "sxcli.dev/completion/script"
-	sxclifw "sxcli.dev/fw"
+	"sxcli.dev/fw"
 )
 
 // The core's Introspector must keep satisfying the engine's Source —
 // this line is the module's whole dependency on that fact, checked at
 // compile time.
-var _ engine.Source = (*sxclifw.Introspector)(nil)
+var _ engine.Source = (*fw.Introspector)(nil)
 
 // defaultBreaks is bash's stock COMP_WORDBREAKS, the assumption when a
 // query arrives without --breaks (manual invocation; the generated
 // script always passes the real value).
 const defaultBreaks = " \t\n\"'><=;|&(:"
 
+// ID is the package's public handle: name it in a composition's
+// Accept to include bash completion in the binary.
+const ID = "sxcli.dev/completion/bash"
+
 func init() {
-	c := &Completion{cfg: config{Breaks: defaultBreaks}}
-	sxclifw.Register("completionbash", c,
-		sxclifw.System(),
-		sxclifw.WithConfig(&c.cfg),
-		sxclifw.WithMetadata(&sxclifw.Metadata{
+	fw.NewRegistration(ID, func() *Completion {
+		return &Completion{cfg: config{Breaks: defaultBreaks}}
+	}, func(c *Completion) *config { return &c.cfg }).
+		Alias("completionbash").
+		System().
+		Metadata(&fw.Metadata{
 			Description: "bash completion for this binary: --script prints the registration script for the name the binary was invoked as, completion queries arrive as raw COMP_WORDS/COMP_CWORD and are answered one candidate per line on stdout",
-		}),
-	)
+		}).
+		Register()
 }
 
 // Configured validates nothing: the query fields are per-invocation
@@ -58,7 +63,7 @@ func (c *Completion) Run() int {
 	if c.cfg.Script {
 		script(os.Stdout, c.I, os.Args[0])
 	} else {
-		answer(os.Stdout, c.I, c.cfg, sxclifw.Positionals())
+		answer(os.Stdout, c.I, c.cfg, fw.Positionals())
 	}
 	return 0
 }

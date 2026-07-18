@@ -28,7 +28,7 @@ import (
 	"testing"
 
 	_ "sxcli.dev/completion/bash"
-	sxclifw "sxcli.dev/fw"
+	"sxcli.dev/fw"
 )
 
 const personality = "SXCLI_COMPLETION_BASH_SMOKE"
@@ -48,17 +48,18 @@ func (s *smokeApplet) Run() int          { return 0 }
 
 func TestMain(m *testing.M) {
 	if os.Getenv(personality) == "1" {
-		s := &smokeApplet{cfg: smokeCfg{Level: "info", Out: "unix:/dev/log"}}
-		sxclifw.Register("srv", s,
-			sxclifw.WithConfig(&s.cfg),
-			sxclifw.WithMetadata(&sxclifw.Metadata{
+		fw.NewRegistration("example.com/smoke/srv", func() *smokeApplet {
+			return &smokeApplet{cfg: smokeCfg{Level: "info", Out: "unix:/dev/log"}}
+		}, func(s *smokeApplet) *smokeCfg { return &s.cfg }).
+			Alias("srv").
+			Metadata(&fw.Metadata{
 				Fields: map[string]any{
-					"Level": sxclifw.FieldMetadata[string]{Allowed: []string{"debug", "info", "warn"}},
-					"Out":   sxclifw.FieldMetadata[string]{Allowed: []string{"unix:/dev/log", "tcp:remote"}},
+					"Level": fw.FieldMetadata[string]{Allowed: []string{"debug", "info", "warn"}},
+					"Out":   fw.FieldMetadata[string]{Allowed: []string{"unix:/dev/log", "tcp:remote"}},
 				},
-			}),
-		)
-		sxclifw.Main() // never returns
+			}).
+			Register()
+		fw.Main() // never returns
 	}
 	os.Exit(m.Run())
 }

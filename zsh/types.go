@@ -31,7 +31,7 @@
 package zsh
 
 import (
-	sxclifw "sxcli.dev/fw"
+	"sxcli.dev/fw"
 )
 
 // Completion is the completionzsh System applet. It consumes the
@@ -40,7 +40,7 @@ import (
 type Completion struct {
 	// I is the core's composition truth; the closure containing it is
 	// never ejected, and only completion invocations pay that.
-	I   *sxclifw.Introspector `inject:""`
+	I   *fw.Introspector `inject:""`
 	cfg config
 }
 

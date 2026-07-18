@@ -20,14 +20,14 @@ import (
 	"strings"
 	"testing"
 
-	sxclifw "sxcli.dev/fw"
+	"sxcli.dev/fw"
 )
 
 type fakeSource struct {
 	applets  []string
 	single   string
 	services []string
-	infos    []sxclifw.ArgInfo
+	infos    []fw.ArgInfo
 	asked    string
 	words    []string
 }
@@ -37,7 +37,7 @@ func (s *fakeSource) Services() []string { return s.services }
 func (s *fakeSource) SingleApplet() (string, bool) {
 	return s.single, s.single != ""
 }
-func (s *fakeSource) Arguments(appletID string, args []string) ([]sxclifw.ArgInfo, error) {
+func (s *fakeSource) Arguments(appletID string, args []string) ([]fw.ArgInfo, error) {
 	s.asked = appletID
 	s.words = args
 	return s.infos, nil
@@ -45,9 +45,9 @@ func (s *fakeSource) Arguments(appletID string, args []string) ([]sxclifw.ArgInf
 
 var stringT = reflect.TypeOf("")
 
-func demoInfos() []sxclifw.ArgInfo {
-	return []sxclifw.ArgInfo{
-		{Service: "core", Long: "config", Short: "c", Usage: "config path", Type: stringT, Hint: sxclifw.HintFile},
+func demoInfos() []fw.ArgInfo {
+	return []fw.ArgInfo{
+		{Service: "core", Long: "config", Short: "c", Usage: "config path", Type: stringT, Hint: fw.HintFile},
 		{Service: "cat", Long: "out", Usage: "log target", Type: stringT, Allowed: []any{"unix:/dev/log", "tcp:remote"}},
 		{Service: "cat", Long: "log-level", Usage: "verbosity", Type: stringT, Allowed: []any{"debug", "info"}},
 	}

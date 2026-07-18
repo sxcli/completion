@@ -30,7 +30,7 @@ import (
 	"reflect"
 	"strings"
 
-	sxclifw "sxcli.dev/fw"
+	"sxcli.dev/fw"
 )
 
 // Complete returns the candidates for one query, already filtered by
@@ -78,8 +78,8 @@ func Complete(src Source, q Query) []Candidate {
 func arguments(src Source, appletID string, words []string, current string) []Candidate {
 	var out []Candidate
 	infos, _ := src.Arguments(appletID, words) // best effort: the fallback schema still completes
-	long := map[string]*sxclifw.ArgInfo{}
-	short := map[string]*sxclifw.ArgInfo{}
+	long := map[string]*fw.ArgInfo{}
+	short := map[string]*fw.ArgInfo{}
 	for i := 0; i < len(infos); i++ {
 		if infos[i].Long != "" {
 			long[infos[i].Long] = &infos[i]
@@ -125,8 +125,8 @@ func arguments(src Source, appletID string, words []string, current string) []Ca
 // a value (never a bool — bools take values only =-joined), whether a
 // bare -- put the cursor in positional land, and which long names were
 // already consumed.
-func walk(words []string, long, short map[string]*sxclifw.ArgInfo) (*sxclifw.ArgInfo, bool, map[string]bool) {
-	var pending *sxclifw.ArgInfo
+func walk(words []string, long, short map[string]*fw.ArgInfo) (*fw.ArgInfo, bool, map[string]bool) {
+	var pending *fw.ArgInfo
 	positional := false
 	used := map[string]bool{}
 	for k := 0; k < len(words) && !positional; k++ {
@@ -167,7 +167,7 @@ func walk(words []string, long, short map[string]*sxclifw.ArgInfo) (*sxclifw.Arg
 // directives hand the work to the shell, service ids come from the
 // registry. An undeclared value yields nothing and the shell's own
 // default takes over.
-func values(src Source, f *sxclifw.ArgInfo, prefix string) []Candidate {
+func values(src Source, f *fw.ArgInfo, prefix string) []Candidate {
 	var out []Candidate
 	if len(f.Allowed) > 0 {
 		for _, v := range f.Allowed {
@@ -182,14 +182,16 @@ func values(src Source, f *sxclifw.ArgInfo, prefix string) []Candidate {
 				out = append(out, Candidate{Value: s, Kind: KindValue})
 			}
 		}
-	} else if f.Hint == sxclifw.HintFile {
+	} else if f.Hint == fw.HintFile {
 		out = append(out, Candidate{Kind: KindFiles})
-	} else if f.Hint == sxclifw.HintDirectory {
+	} else if f.Hint == fw.HintDirectory {
 		out = append(out, Candidate{Kind: KindDirs})
-	} else if f.Hint == sxclifw.HintServiceID {
-		for _, id := range src.Services() {
-			if strings.HasPrefix(id, prefix) {
-				out = append(out, Candidate{Value: id, Kind: KindValue})
+	} else if f.Hint == fw.HintServiceID {
+		for _, alias := range src.Services() {
+			// the synthesized core leads the listing but is not a
+			// service reference anyone can disable, enable or override
+			if alias != fw.CoreAlias && strings.HasPrefix(alias, prefix) {
+				out = append(out, Candidate{Value: alias, Kind: KindValue})
 			}
 		}
 	}
@@ -198,6 +200,6 @@ func values(src Source, f *sxclifw.ArgInfo, prefix string) []Candidate {
 
 // isBool mirrors the parser's rule: a non-slice bool field never
 // consumes the next word.
-func isBool(f *sxclifw.ArgInfo) bool {
+func isBool(f *fw.ArgInfo) bool {
 	return !f.IsSlice && f.Type != nil && f.Type.Kind() == reflect.Bool
 }

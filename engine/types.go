@@ -15,12 +15,12 @@
 package engine
 
 import (
-	sxclifw "sxcli.dev/fw"
+	"sxcli.dev/fw"
 )
 
-// Source is the narrow view of the core's *sxclifw.Introspector the
+// Source is the narrow view of the core's *fw.Introspector the
 // engine consumes — the honest ledger of what this module needs from
-// the framework. *sxclifw.Introspector satisfies it implicitly; tests
+// the framework. *fw.Introspector satisfies it implicitly; tests
 // satisfy it with a fake.
 type Source interface {
 	// Applets returns the ids of the binary's public applets, in
@@ -41,7 +41,7 @@ type Source interface {
 	// would have if invoked with args — the words BEFORE the cursor:
 	// a half-typed token passed as data would be planned as
 	// configuration.
-	Arguments(appletID string, args []string) ([]sxclifw.ArgInfo, error)
+	Arguments(appletID string, args []string) ([]fw.ArgInfo, error)
 }
 
 // Query is one completion request, already decoded from the shell's

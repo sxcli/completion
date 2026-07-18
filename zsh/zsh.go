@@ -23,18 +23,22 @@ import (
 
 	"sxcli.dev/completion/engine"
 	genscript "sxcli.dev/completion/script"
-	sxclifw "sxcli.dev/fw"
+	"sxcli.dev/fw"
 )
 
+// ID is the package's public handle: name it in a composition's
+// Accept to include zsh completion in the binary.
+const ID = "sxcli.dev/completion/zsh"
+
 func init() {
-	c := &Completion{}
-	sxclifw.Register("completionzsh", c,
-		sxclifw.System(),
-		sxclifw.WithConfig(&c.cfg),
-		sxclifw.WithMetadata(&sxclifw.Metadata{
+	fw.NewRegistration(ID, func() *Completion { return &Completion{} },
+		func(c *Completion) *config { return &c.cfg }).
+		Alias("completionzsh").
+		System().
+		Metadata(&fw.Metadata{
 			Description: "zsh completion for this binary: --script prints the compdef registration for the name the binary was invoked as, completion queries arrive as zsh words/CURRENT/PREFIX and are answered as _describe pairs on stdout",
-		}),
-	)
+		}).
+		Register()
 }
 
 // Configured validates nothing: the query fields are per-invocation
@@ -48,7 +52,7 @@ func (c *Completion) Run() int {
 	if c.cfg.Script {
 		script(os.Stdout, c.I, os.Args[0])
 	} else {
-		answer(os.Stdout, c.I, c.cfg, sxclifw.Positionals())
+		answer(os.Stdout, c.I, c.cfg, fw.Positionals())
 	}
 	return 0
 }
@@ -113,7 +117,7 @@ func answer(w io.Writer, src engine.Source, cfg config, words []string) {
 			fmt.Fprintln(w, "\x01dirs")
 		} else {
 			line := strings.ReplaceAll(cand.Value, ":", `\:`)
-			if doc := oneLine(sxclifw.Tr(cand.Doc)); doc != "" {
+			if doc := oneLine(fw.Tr(cand.Doc)); doc != "" {
 				line += ":" + doc
 			}
 			fmt.Fprintln(w, line)
