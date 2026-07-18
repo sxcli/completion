@@ -57,6 +57,7 @@ type Completion struct {
 // generated through an applet symlink. Everything is argument-only
 // (env:"-"): the query is per-keystroke transport, not configuration.
 type config struct {
+	Version uint32 `json:"version"`
 	Script  bool   `json:"script" arg:"script" env:"-" usage:"print the zsh completion script to stdout and exit"`
 	Applet  string `json:"applet" arg:"applet" env:"-" usage:"target applet id baked by the generated script; empty means selector logic applies"`
 	CWord   int    `json:"cword" arg:"cword" env:"-" usage:"0-based index of the word being completed"`

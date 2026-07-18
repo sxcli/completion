@@ -31,7 +31,7 @@ import (
 const ID = "sxcli.dev/completion/zsh"
 
 func init() {
-	fw.NewRegistration(ID, func() *Completion { return &Completion{} },
+	fw.NewRegistration(ID, func() *Completion { return &Completion{cfg: config{Version: 1}} },
 		func(c *Completion) *config { return &c.cfg }).
 		Alias("completionzsh").
 		System().

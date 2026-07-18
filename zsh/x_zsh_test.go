@@ -34,8 +34,9 @@ import (
 const personality = "SXCLI_COMPLETION_ZSH_SMOKE"
 
 type smokeCfg struct {
-	Level string `json:"level" arg:"level" usage:"verbosity"`
-	Out   string `json:"out" arg:"out" usage:"log target"`
+	Version uint32 `json:"version"`
+	Level   string `json:"level" arg:"level" usage:"verbosity"`
+	Out     string `json:"out" arg:"out" usage:"log target"`
 }
 
 type smokeApplet struct{ cfg smokeCfg }
@@ -46,7 +47,7 @@ func (s *smokeApplet) Run() int          { return 0 }
 func TestMain(m *testing.M) {
 	if os.Getenv(personality) == "1" {
 		fw.NewRegistration("example.com/smoke/srv", func() *smokeApplet {
-			return &smokeApplet{cfg: smokeCfg{Level: "info", Out: "unix:/dev/log"}}
+			return &smokeApplet{cfg: smokeCfg{Version: 1, Level: "info", Out: "unix:/dev/log"}}
 		}, func(s *smokeApplet) *smokeCfg { return &s.cfg }).
 			Alias("srv").
 			Metadata(&fw.Metadata{

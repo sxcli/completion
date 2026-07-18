@@ -42,7 +42,7 @@ const ID = "sxcli.dev/completion/bash"
 
 func init() {
 	fw.NewRegistration(ID, func() *Completion {
-		return &Completion{cfg: config{Breaks: defaultBreaks}}
+		return &Completion{cfg: config{Version: 1, Breaks: defaultBreaks}}
 	}, func(c *Completion) *config { return &c.cfg }).
 		Alias("completionbash").
 		System().
