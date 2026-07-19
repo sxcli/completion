@@ -190,3 +190,21 @@ func TestArgCandidatesCarryDocs(t *testing.T) {
 		t.Errorf("usage must flow into Doc: %+v", got)
 	}
 }
+
+func TestBarePositionalSilencesArguments(t *testing.T) {
+	// the strict parser refuses arguments after a pending bare token
+	// ("positionals must come last") — offering names there would
+	// complete straight into a parse error
+	src := &fakeSource{single: "solo", infos: demoInfos()}
+	if got := Complete(src, Query{Words: []string{"datafile"}, Current: "--"}); len(got) != 0 {
+		t.Errorf("names after a bare positional must not be offered: %v", got)
+	}
+	if got := Complete(src, Query{Words: []string{"datafile"}, Current: "--log-level="}); len(got) != 0 {
+		t.Errorf("joined values after a bare positional must not be offered: %v", got)
+	}
+	// a bare word that is a pending argument's VALUE is not positional
+	src2 := &fakeSource{single: "solo", infos: demoInfos()}
+	if got := Complete(src2, Query{Words: []string{"--log-level", "info"}, Current: "--"}); len(got) == 0 {
+		t.Error("a consumed value must not silence completion")
+	}
+}

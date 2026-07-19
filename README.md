@@ -96,7 +96,8 @@ elvish, …) is two small pieces over two packages:
   dispatch semantics are never reimplemented per shell.
 
 The `bash` and `zsh` packages are the reference implementations —
-each is one template plus ~60 lines of Go.
+each is one template plus the Go that decodes its shell's transport
+(bash's word-reassembly makes that the bigger half).
 
 ## License
 

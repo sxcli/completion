@@ -23,19 +23,20 @@ import (
 // the framework. *fw.Introspector satisfies it implicitly; tests
 // satisfy it with a fake.
 type Source interface {
-	// Applets returns the ids of the binary's public applets, in
-	// registration order (Hidden and System applets are already
+	// Applets returns the PRIMARY ALIASES of the binary's public
+	// applets — the operator vocabulary, what a selector word is —
+	// in registration order (Hidden and System applets are already
 	// filtered by the core).
 	Applets() []string
 	// SingleApplet reports the applet that would run with no selector
-	// word — dispatch-mode truth from the core's own dispatch rules.
-	// The engine must not re-derive it from Applets: that listing is
-	// public-only, while a Hidden non-System applet still counts for
-	// the mode.
+	// word — its primary alias, dispatch-mode truth from the core's
+	// own dispatch rules. The engine must not re-derive it from
+	// Applets: that listing is public-only, while a Hidden non-System
+	// applet still counts for the mode.
 	SingleApplet() (string, bool)
-	// Services returns the ids of every registered service — the
-	// candidate pool for values declared HintServiceID (the core's
-	// --disable and --enable).
+	// Services returns the primary alias of every registered service —
+	// the candidate pool for values declared HintServiceID (the core's
+	// --disable and --enable resolve aliases and ids alike).
 	Services() []string
 	// Arguments returns the closure-true argument schema the applet
 	// would have if invoked with args — the words BEFORE the cursor:
@@ -47,7 +48,8 @@ type Source interface {
 // Query is one completion request, already decoded from the shell's
 // transport by the calling adapter.
 type Query struct {
-	// Applet is the target applet id; "" means the binary decides —
+	// Applet is the target applet's name (alias or id — the core
+	// resolves both); "" means the binary decides —
 	// single-applet binaries have no selector word, and in
 	// multi-applet binaries an empty Applet with an empty Words means
 	// the first word itself is being completed.
@@ -65,7 +67,8 @@ type Query struct {
 type Kind int
 
 const (
-	// KindApplet is an applet id completing the first word.
+	// KindApplet is an applet's primary alias completing the first
+	// selector word.
 	KindApplet Kind = iota
 	// KindArg is an argument name; Value carries the dashes ("--log-level", "-c").
 	KindArg

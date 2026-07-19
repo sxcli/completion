@@ -1,5 +1,15 @@
 # sxcli.dev/completion — Design Specification
 
+> **Staleness note (2026-07-19):** this spec predates the fw v0.3.0
+> composition release and is kept as designed. Known drift: blank-import
+> integration (§2) is dead — compositions accept `bash.ID`/`zsh.ID`;
+> `completionbash`/`completionzsh` are the applets' ALIASES (ids are
+> `sxcli.dev/completion/bash` and `.../zsh`); registration now goes
+> through the v0.3.0 chain; `engine` and `script` are PUBLIC packages
+> (the §2 reversal supersedes §4/§7's `internal/` paths); the bash wire
+> protocol grew `--line` and `--breaks` (§6). The code and README are
+> the current truth.
+
 Status: living document, design phase. Decisions recorded as made.
 
 ## 1. Purpose & Position

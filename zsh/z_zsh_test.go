@@ -136,3 +136,33 @@ func TestScriptRealBinaryKeepsSelectorLogic(t *testing.T) {
 		t.Errorf("sanitized function name wrong:\n%s", text)
 	}
 }
+
+func TestAnswerRebuildsEqualsJoinedTokens(t *testing.T) {
+	// zsh matches candidates against the whole $PREFIX: a value
+	// completed through --name= must come back as the full token
+	src := &fakeSource{single: "solo", infos: demoInfos()}
+	var out bytes.Buffer
+	answer(&out, src, config{CWord: 1, Current: "--log-level=de"}, []string{"solo", "--log-level=de"})
+	if out.String() != "--log-level=debug\n" {
+		t.Errorf("=-joined value must be rebuilt to the full token: %q", out.String())
+	}
+	// bools travel the same road
+	src2 := &fakeSource{single: "solo", infos: []fw.ArgInfo{
+		{Service: "solo", Long: "debug", Usage: "verbose", Type: reflect.TypeOf(true)},
+	}}
+	var out2 bytes.Buffer
+	answer(&out2, src2, config{CWord: 1, Current: "--debug=t"}, []string{"solo", "--debug=t"})
+	if out2.String() != "--debug=true\n" {
+		t.Errorf("=-joined bool must be rebuilt too: %q", out2.String())
+	}
+	// an Allowed value containing '=' cuts at the FIRST =, the
+	// engine's own semantic split
+	src3 := &fakeSource{single: "solo", infos: []fw.ArgInfo{
+		{Service: "solo", Long: "set", Usage: "kv", Type: stringT, Allowed: []any{"k=v"}},
+	}}
+	var out3 bytes.Buffer
+	answer(&out3, src3, config{CWord: 1, Current: "--set=k"}, []string{"solo", "--set=k"})
+	if out3.String() != "--set=k=v\n" {
+		t.Errorf("first-= cut wrong: %q", out3.String())
+	}
+}
