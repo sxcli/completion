@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bash registers the completionbash System applet: bash
-// completion for the importing binary. Blank-import to link it, like a
-// log sink:
+// Package bash catalogs the completionbash System applet: bash
+// completion for the composing binary. Accept it by ID (AcceptAll
+// compositions get it by importing):
 //
-//	import _ "sxcli.dev/completion/bash"
+//	fw.Builder().Accept(bash.ID, …)
 //
 // Installation (documented by --script's output too):
 //

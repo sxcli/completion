@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package zsh registers the completionzsh System applet: zsh
-// completion for the importing binary. Blank-import to link it, like a
-// log sink:
+// Package zsh catalogs the completionzsh System applet: zsh
+// completion for the composing binary. Accept it by ID (AcceptAll
+// compositions get it by importing):
 //
-//	import _ "sxcli.dev/completion/zsh"
+//	fw.Builder().Accept(zsh.ID, …)
 //
 // Installation (compinit must have run first — standard zsh setup):
 //

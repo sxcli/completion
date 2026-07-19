@@ -17,14 +17,19 @@
 // framework's Introspector API and registers one System applet per
 // supported shell — nothing here is, or needs to be, part of the core.
 //
-// Each shell lives in its own package, selected by blank import exactly
-// like the framework's log sinks — a binary links only the shells it
-// wants to support:
+// Each shell lives in its own package and catalogs one service; the
+// composition names what it takes by ID, like every other sxcli
+// service — a binary links only the shells it wants to support:
 //
 //	import (
-//	    _ "sxcli.dev/completion/bash"
-//	    _ "sxcli.dev/completion/zsh"
+//	    "sxcli.dev/completion/bash"
+//	    "sxcli.dev/completion/zsh"
 //	)
+//
+//	fw.Builder().Accept(bash.ID, zsh.ID /* , … */).Main()
+//
+// (Solo and fw.Main() compositions accept everything cataloged, so
+// single-applet binaries just import and go.)
 //
 // The shared candidate computation is the public engine package and
 // the --script generation policy is the public script package; the
