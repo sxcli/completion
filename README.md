@@ -1,16 +1,23 @@
 # sxcli completion — shell completion for sxcli.dev/fw binaries
 
 `sxcli.dev/completion` adds bash and zsh completion to any binary built
-on [`sxcli.dev/fw`](https://sxcli.dev). One blank import per shell,
-exactly like the framework's log sinks — a binary links only what it
-wants to support:
+on [`sxcli.dev/fw`](https://sxcli.dev) v0.3.0+. Each shell package
+catalogs one service; the composition names what it takes — the same
+identity model as every other sxcli service, no blank-import magic:
 
 ```go
 import (
-    _ "sxcli.dev/completion/bash"
-    _ "sxcli.dev/completion/zsh"
+    "sxcli.dev/completion/bash"
+    "sxcli.dev/completion/zsh"
 )
+
+fw.Builder().
+    Accept(bash.ID, zsh.ID /* , your services… */).
+    Main()
 ```
+
+(`fw.Solo` and `fw.Main()` compositions accept everything cataloged,
+so single-applet binaries just import and go.)
 
 That is the entire integration. There is nothing to declare beyond
 what the framework already knows: completions are computed from the
