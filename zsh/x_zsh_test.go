@@ -35,8 +35,8 @@ const personality = "SXCLI_COMPLETION_ZSH_SMOKE"
 
 type smokeCfg struct {
 	Version uint32 `json:"version"`
-	Level   string `json:"level" arg:"level" usage:"verbosity"`
-	Out     string `json:"out" arg:"out" usage:"log target"`
+	Level   string `json:"level" conf:"level" usage:"verbosity"`
+	Out     string `json:"out" conf:"out" usage:"log target"`
 }
 
 type smokeApplet struct{ cfg smokeCfg }

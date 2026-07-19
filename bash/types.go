@@ -60,9 +60,9 @@ type Completion struct {
 // not configuration.
 type config struct {
 	Version uint32 `json:"version"`
-	Script  bool   `json:"script" arg:"script" env:"-" usage:"print the bash completion script to stdout and exit"`
-	Applet  string `json:"applet" arg:"applet" env:"-" usage:"target applet id baked by the generated script; empty means selector logic applies"`
-	CWord   int    `json:"cword" arg:"cword" env:"-" usage:"index of the word being completed within the raw completion words"`
-	Line    string `json:"line" arg:"line" env:"-" usage:"the raw command line being completed (COMP_LINE)"`
-	Breaks  string `json:"breaks" arg:"breaks" env:"-" usage:"the shell's word-break characters (COMP_WORDBREAKS)"`
+	Script  bool   `json:"script" conf:"script" env:"-" usage:"print the bash completion script to stdout and exit"`
+	Applet  string `json:"applet" conf:"applet" env:"-" usage:"target applet id baked by the generated script; empty means selector logic applies"`
+	CWord   int    `json:"cword" conf:"cword" env:"-" usage:"index of the word being completed within the raw completion words"`
+	Line    string `json:"line" conf:"line" env:"-" usage:"the raw command line being completed (COMP_LINE)"`
+	Breaks  string `json:"breaks" conf:"breaks" env:"-" usage:"the shell's word-break characters (COMP_WORDBREAKS)"`
 }
