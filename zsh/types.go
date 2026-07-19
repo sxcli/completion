@@ -57,9 +57,10 @@ type Completion struct {
 // generated through an applet symlink. Everything is argument-only
 // (env:"-"): the query is per-keystroke transport, not configuration.
 type config struct {
-	Version uint32 `json:"version"`
-	Script  bool   `json:"script" conf:"script" env:"-" usage:"print the zsh completion script to stdout and exit"`
-	Applet  string `json:"applet" conf:"applet" env:"-" usage:"target applet id baked by the generated script; empty means selector logic applies"`
-	CWord   int    `json:"cword" conf:"cword" env:"-" usage:"0-based index of the word being completed"`
-	Current string `json:"current" conf:"current" env:"-" usage:"the pre-cursor part of the word being completed (PREFIX)"`
+	Version uint32   `json:"version"`
+	Script  bool     `json:"script" conf:"script" env:"-" usage:"print the zsh completion script to stdout and exit"`
+	Applet  string   `json:"applet" conf:"applet" env:"-" usage:"target applet id baked by the generated script; empty means selector logic applies"`
+	CWord   int      `json:"cword" conf:"cword" env:"-" usage:"0-based index of the word being completed"`
+	Current string   `json:"current" conf:"current" env:"-" usage:"the pre-cursor part of the word being completed (PREFIX)"`
+	Words   []string `json:"words" pos:"rest" usage:"the raw completion words"`
 }

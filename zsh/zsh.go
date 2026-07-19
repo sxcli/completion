@@ -52,7 +52,7 @@ func (c *Completion) Run() int {
 	if c.cfg.Script {
 		script(os.Stdout, c.I, os.Args[0])
 	} else {
-		answer(os.Stdout, c.I, c.cfg, fw.Positionals())
+		answer(os.Stdout, c.I, c.cfg, c.cfg.Words)
 	}
 	return 0
 }
