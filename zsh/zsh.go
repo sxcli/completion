@@ -50,9 +50,9 @@ func (c *Completion) Configured() error { return nil }
 // completion must never look like a failure.
 func (c *Completion) Run() int {
 	if c.cfg.Script {
-		script(os.Stdout, c.I, os.Args[0])
+		script(os.Stdout, c.Sys.Introspector(), os.Args[0])
 	} else {
-		answer(os.Stdout, c.I, c.cfg, c.cfg.Words)
+		answer(os.Stdout, c.Sys.Introspector(), c.cfg, c.cfg.Words)
 	}
 	return 0
 }

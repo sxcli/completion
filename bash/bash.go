@@ -24,12 +24,14 @@ import (
 	"sxcli.dev/completion/engine"
 	genscript "sxcli.dev/completion/script"
 	"sxcli.dev/fw"
+	"sxcli.dev/fw/system"
 )
 
 // The core's Introspector must keep satisfying the engine's Source —
 // this line is the module's whole dependency on that fact, checked at
 // compile time.
-var _ engine.Source = (*fw.Introspector)(nil)
+// the system vocabulary IS the engine contract
+var _ engine.Source = (system.Introspector)(nil)
 
 // defaultBreaks is bash's stock COMP_WORDBREAKS, the assumption when a
 // query arrives without --breaks (manual invocation; the generated
@@ -61,9 +63,9 @@ func (c *Completion) Configured() error { return nil }
 // completion must never look like a failure.
 func (c *Completion) Run() int {
 	if c.cfg.Script {
-		script(os.Stdout, c.I, os.Args[0])
+		script(os.Stdout, c.Sys.Introspector(), os.Args[0])
 	} else {
-		answer(os.Stdout, c.I, c.cfg, c.cfg.Words)
+		answer(os.Stdout, c.Sys.Introspector(), c.cfg, c.cfg.Words)
 	}
 	return 0
 }

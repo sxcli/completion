@@ -122,7 +122,7 @@ func TestSmokeFileDirective(t *testing.T) {
 
 func TestSmokeServiceIDs(t *testing.T) {
 	out := query(t, "completionzsh", "--cword", "2", "--current", "", "--", "srv", "--disable", "")
-	if !strings.Contains(out, "srv\n") || !strings.Contains(out, "introspection\n") {
+	if !strings.Contains(out, "srv\n") || !strings.Contains(out, "system\n") {
 		t.Errorf("service id completion wrong: %q", out)
 	}
 }
