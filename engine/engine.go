@@ -38,21 +38,25 @@ import (
 // completion, argument names, declared value domains and the
 // file/directory directives all come out of the same call — the
 // adapter never decides what is being completed, only how to print it.
-// The result is best-effort like the Introspector itself: on planning
-// violations the schema falls back to registration-level truth, and an
-// unanswerable query yields no candidates rather than an error a shell
-// script cannot render anyway.
+// Every answer comes from a target-scoped view built from the catalog
+// alone — deterministic, environment-free — and an unanswerable query
+// (an unknown target included) yields no candidates rather than an
+// error a shell script cannot render anyway.
 //
 // The target applet resolves like core dispatch: an explicit q.Applet
 // wins, then single-applet mode, then a bare first word as the
 // selector. With no target and no words the first word itself is being
 // completed: public applet names.
-func Complete(src Source, q Query) []Candidate {
+func Complete(sys System, q Query) []Candidate {
 	var out []Candidate
+	binary := sys.Introspector("")
+	if binary == nil {
+		return nil // no composition attached: nothing to offer
+	}
 	target := q.Applet
 	words := q.Words
 	if target == "" {
-		if id, single := src.SingleApplet(); single {
+		if id, single := binary.SingleApplet(); single {
 			target = id
 		} else if len(words) > 0 && !strings.HasPrefix(words[0], "-") {
 			target = words[0]
@@ -60,9 +64,11 @@ func Complete(src Source, q Query) []Candidate {
 		}
 	}
 	if target != "" {
-		out = arguments(src, target, words, q.Current)
+		if view := sys.Introspector(target); view != nil {
+			out = arguments(view, words, q.Current)
+		}
 	} else if len(words) == 0 && !strings.HasPrefix(q.Current, "-") {
-		for _, id := range src.Applets() {
+		for _, id := range binary.Applets() {
 			if strings.HasPrefix(id, q.Current) {
 				out = append(out, Candidate{Value: id, Kind: KindApplet})
 			}
@@ -71,13 +77,13 @@ func Complete(src Source, q Query) []Candidate {
 	return out
 }
 
-// arguments completes within one applet's invocation: the closure-true
-// schema is planned from the words (an --enable among them is honored
-// by the core's own planning), the words are walked to find the parse
-// state at the cursor, and candidates are emitted from that state.
-func arguments(src Source, appletID string, words []string, current string) []Candidate {
+// arguments completes within one applet's invocation: the view IS the
+// target's closure-true schema, the words are walked to find the
+// parse state at the cursor, and candidates are emitted from that
+// state.
+func arguments(src Source, words []string, current string) []Candidate {
 	var out []Candidate
-	infos, _ := src.Arguments(appletID, words) // best effort: the fallback schema still completes
+	infos := src.Arguments(words)
 	long := map[string]*fw.ArgInfo{}
 	short := map[string]*fw.ArgInfo{}
 	for i := 0; i < len(infos); i++ {

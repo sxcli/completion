@@ -15,34 +15,21 @@
 package engine
 
 import (
-	"sxcli.dev/fw"
+	"sxcli.dev/fw/system"
 )
 
-// Source is the narrow view of the core's *fw.Introspector the
-// engine consumes — the honest ledger of what this module needs from
-// the framework. *fw.Introspector satisfies it implicitly; tests
-// satisfy it with a fake.
-type Source interface {
-	// Applets returns the PRIMARY ALIASES of the binary's public
-	// applets — the operator vocabulary, what a selector word is —
-	// in registration order (Hidden and System applets are already
-	// filtered by the core).
-	Applets() []string
-	// SingleApplet reports the applet that would run with no selector
-	// word — its primary alias, dispatch-mode truth from the core's
-	// own dispatch rules. The engine must not re-derive it from
-	// Applets: that listing is public-only, while a Hidden non-System
-	// applet still counts for the mode.
-	SingleApplet() (string, bool)
-	// Services returns the primary alias of every registered service —
-	// the candidate pool for values declared HintServiceID (the core's
-	// --disable and --enable resolve aliases and ids alike).
-	Services() []string
-	// Arguments returns the closure-true argument schema the applet
-	// would have if invoked with args — the words BEFORE the cursor:
-	// a half-typed token passed as data would be planned as
-	// configuration.
-	Arguments(appletID string, args []string) ([]fw.ArgInfo, error)
+// Source is one target-scoped introspection view — the system
+// vocabulary IS the engine contract, by alias: the view the framework
+// hands out is exactly what completion consumes. Tests satisfy it
+// with a fake.
+type Source = system.Introspector
+
+// System hands out target-scoped views by dispatch name: "" is the
+// binary view (applet listing), an unknown name is nil ("offer
+// nothing"). The framework's system.System satisfies it structurally
+// — this interface is the honest ledger of what the module needs.
+type System interface {
+	Introspector(applet string) Source
 }
 
 // Query is one completion request, already decoded from the shell's

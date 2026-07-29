@@ -50,9 +50,9 @@ func (c *Completion) Configured() error { return nil }
 // completion must never look like a failure.
 func (c *Completion) Run() int {
 	if c.cfg.Script {
-		script(os.Stdout, c.Sys.Introspector(), os.Args[0])
+		script(os.Stdout, c.Sys.Introspector(""), os.Args[0])
 	} else {
-		answer(os.Stdout, c.Sys.Introspector(), c.cfg, c.cfg.Words)
+		answer(os.Stdout, c.Sys, c.cfg, c.cfg.Words)
 	}
 	return 0
 }
@@ -103,7 +103,7 @@ func script(w io.Writer, src engine.Source, argv0 string) {
 // cursor, ask the engine, print _describe pairs. Values have their
 // colons escaped (the _describe separator); the description is the
 // candidate's one-line doc rendered through Tr, zsh's whole point.
-func answer(w io.Writer, src engine.Source, cfg config, words []string) {
+func answer(w io.Writer, sys engine.System, cfg config, words []string) {
 	q := engine.Query{Applet: cfg.Applet, Current: cfg.Current}
 	if cfg.CWord >= 1 && cfg.CWord <= len(words) {
 		q.Words = words[1:cfg.CWord]
@@ -118,7 +118,7 @@ func answer(w io.Writer, src engine.Source, cfg config, words []string) {
 	if strings.HasPrefix(cfg.Current, "-") {
 		eq = strings.Index(cfg.Current, "=")
 	}
-	for _, cand := range engine.Complete(src, q) {
+	for _, cand := range engine.Complete(sys, q) {
 		if cand.Kind == engine.KindFiles {
 			fmt.Fprintln(w, "\x01files")
 		} else if cand.Kind == engine.KindDirs {

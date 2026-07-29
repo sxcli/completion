@@ -35,11 +35,12 @@ import (
 )
 
 // Completion is the completionzsh System applet. It consumes the
-// core's Introspector (by concrete type, cold like any service) and
-// answers two operations: --script emission and completion queries.
+// framework's System facade and answers two operations: --script
+// emission and completion queries.
 type Completion struct {
-	// I is the core's composition truth; the closure containing it is
-	// never ejected, and only completion invocations pay that.
+	// Sys hands out target-scoped introspection views — built from
+	// the catalog snapshot alone, deterministic and environment-free;
+	// this closure ejects like any other.
 	Sys system.System `inject:""`
 	cfg config
 }

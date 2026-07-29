@@ -27,11 +27,11 @@ import (
 	"sxcli.dev/fw/system"
 )
 
-// The core's Introspector must keep satisfying the engine's Source —
+// The framework's facade must keep satisfying the engine's System —
 // this line is the module's whole dependency on that fact, checked at
-// compile time.
-// the system vocabulary IS the engine contract
-var _ engine.Source = (system.Introspector)(nil)
+// compile time (Source itself is an alias of system.Introspector:
+// the system vocabulary IS the engine contract).
+var _ engine.System = (system.System)(nil)
 
 // defaultBreaks is bash's stock COMP_WORDBREAKS, the assumption when a
 // query arrives without --breaks (manual invocation; the generated
@@ -63,9 +63,9 @@ func (c *Completion) Configured() error { return nil }
 // completion must never look like a failure.
 func (c *Completion) Run() int {
 	if c.cfg.Script {
-		script(os.Stdout, c.Sys.Introspector(), os.Args[0])
+		script(os.Stdout, c.Sys.Introspector(""), os.Args[0])
 	} else {
-		answer(os.Stdout, c.Sys.Introspector(), c.cfg, c.cfg.Words)
+		answer(os.Stdout, c.Sys, c.cfg, c.cfg.Words)
 	}
 	return 0
 }
@@ -114,7 +114,7 @@ func script(w io.Writer, src engine.Source, argv0 string) {
 // actually replace — everything after the last :/= break in the
 // current token (the __ltrim_colon_completions treatment, generalized
 // from the shipped bash-completion).
-func answer(w io.Writer, src engine.Source, cfg config, raw []string) {
+func answer(w io.Writer, sys engine.System, cfg config, raw []string) {
 	words, cur := reassemble(raw, cfg.CWord, cfg.Line, cfg.Breaks)
 	q := engine.Query{Applet: cfg.Applet}
 	if cur >= 1 && cur < len(words) {
@@ -141,7 +141,7 @@ func answer(w io.Writer, src engine.Source, cfg config, raw []string) {
 	// FIRST = — the same cut the engine's semantic split makes; an
 	// Allowed value containing '=' must not eat into the prefix
 	eq := strings.Index(q.Current, "=")
-	for _, cand := range engine.Complete(src, q) {
+	for _, cand := range engine.Complete(sys, q) {
 		if cand.Kind == engine.KindFiles {
 			fmt.Fprintln(w, "\x01files")
 		} else if cand.Kind == engine.KindDirs {

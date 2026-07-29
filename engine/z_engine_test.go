@@ -27,17 +27,27 @@ type fakeSource struct {
 	single   string // "" = multi-applet mode
 	services []string
 	infos    []fw.ArgInfo
-	asked    string // applet id Arguments was called with
+	asked    string // target name Introspector was asked for
 }
 
-func (s *fakeSource) Applets() []string  { return s.applets }
-func (s *fakeSource) Services() []string { return s.services }
+func (s *fakeSource) Applets() []string          { return s.applets }
+func (s *fakeSource) Services() []string         { return s.services }
+func (s *fakeSource) ConfigExtensions() []string { return nil }
+func (s *fakeSource) Describe(string) string     { return "" }
 func (s *fakeSource) SingleApplet() (string, bool) {
 	return s.single, s.single != ""
 }
-func (s *fakeSource) Arguments(appletID string, args []string) ([]fw.ArgInfo, error) {
-	s.asked = appletID
-	return s.infos, nil
+func (s *fakeSource) Arguments(args []string) []fw.ArgInfo {
+	return s.infos
+}
+
+// the fake doubles as its own System: every target answers the same
+// view, recording the name asked for.
+func (s *fakeSource) Introspector(applet string) Source {
+	if applet != "" {
+		s.asked = applet
+	}
+	return s
 }
 
 var (

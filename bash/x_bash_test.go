@@ -112,8 +112,8 @@ func TestSmokeEnumValues(t *testing.T) {
 func TestSmokeServiceIDs(t *testing.T) {
 	out := query(t, "completionbash", "--cword", "2", "--line", "srv --disable ", "--breaks", breaks,
 		"--", "srv", "--disable", "")
-	if !strings.Contains(out, "srv\n") || !strings.Contains(out, "system\n") {
-		t.Errorf("service id completion wrong: %q", out)
+	if !strings.Contains(out, "srv\n") || strings.Contains(out, "system\n") {
+		t.Errorf("service id candidates must be the TARGET's closure only: %q", out)
 	}
 }
 
