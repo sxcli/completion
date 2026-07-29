@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"sxcli.dev/completion/engine"
+	genscript "sxcli.dev/completion/script"
 	"sxcli.dev/fw"
 )
 
@@ -206,6 +207,10 @@ func TestScriptAppletSymlinkBakesTarget(t *testing.T) {
 }
 
 func TestScriptRealBinaryKeepsSelectorLogic(t *testing.T) {
+	// the registered name is fw.BinaryBasename's answer — the SAME
+	// name basename dispatch answers to on this platform (on unix a
+	// literal .exe suffix stays; stripping it here would register a
+	// selector dispatch refuses)
 	src := &fakeSource{applets: []string{"cat", "ls"}}
 	var out bytes.Buffer
 	script(&out, src, "/opt/tools/my-box.exe")
@@ -213,7 +218,8 @@ func TestScriptRealBinaryKeepsSelectorLogic(t *testing.T) {
 	if strings.Contains(text, "--applet") {
 		t.Errorf("real-binary script must not bake a target:\n%s", text)
 	}
-	if !strings.Contains(text, "complete -o default -F _sxcli_my_box my-box") {
-		t.Errorf("sanitized function name wrong:\n%s", text)
+	want := "complete -o default -F _sxcli_" + genscript.Sanitize(fw.BinaryBasename("/opt/tools/my-box.exe")) + " " + fw.BinaryBasename("/opt/tools/my-box.exe")
+	if !strings.Contains(text, want) {
+		t.Errorf("registered name must be dispatch's own basename answer:\n%s", text)
 	}
 }

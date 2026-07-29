@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"sxcli.dev/completion/engine"
@@ -98,7 +97,7 @@ complete -o default -F %[2]s %[1]s
 // as; the baking decision (single-applet / busybox symlink / selector
 // mode) is the shared generation policy in the script package.
 func script(w io.Writer, src engine.Source, argv0 string) {
-	name := strings.TrimSuffix(filepath.Base(argv0), ".exe")
+	name := fw.BinaryBasename(argv0)
 	baked := ""
 	if id := genscript.BakedApplet(src, name); id != "" {
 		baked = " --applet " + id
