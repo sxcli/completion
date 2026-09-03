@@ -198,9 +198,10 @@ func values(src Source, f *fw.ArgInfo, prefix string) []Candidate {
 		out = append(out, Candidate{Kind: KindDirs})
 	} else if f.Hint == fw.HintServiceID {
 		for _, alias := range src.Services() {
-			// the synthesized core leads the listing but is not a
-			// service reference anyone can disable, enable or override
-			if alias != fw.CoreAlias && strings.HasPrefix(alias, prefix) {
+			// the core family leads the listing but is never a
+			// control target (#23) — a candidate that is always a
+			// startup violation is never offered
+			if alias != fw.CoreAlias && alias != fw.SystemAlias && strings.HasPrefix(alias, prefix) {
 				out = append(out, Candidate{Value: alias, Kind: KindValue})
 			}
 		}

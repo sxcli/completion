@@ -140,15 +140,15 @@ func TestPendingHintFileEmitsDirective(t *testing.T) {
 }
 
 func TestPendingServiceIDsFromRegistry(t *testing.T) {
-	src := &fakeSource{single: "solo", services: []string{"core", "logfile", "solo"}, infos: demoInfos()}
+	src := &fakeSource{single: "solo", services: []string{"core", "system", "logfile", "solo"}, infos: demoInfos()}
 	got := Complete(src, Query{Words: []string{"--disable"}, Current: "lo"})
 	if vals(got) != "logfile" || got[0].Kind != KindValue {
 		t.Errorf("service id completion wrong: %v", got)
 	}
-	// the synthesized core leads Services() but is never a candidate:
-	// nobody can disable, enable or override the core
+	// the core family leads Services() but is never a candidate:
+	// nobody can disable, enable or override a core service (#23)
 	if got := Complete(src, Query{Words: []string{"--disable"}}); vals(got) != "logfile,solo" {
-		t.Errorf("core must be filtered from service references: %v", got)
+		t.Errorf("the core family must be filtered from service references: %v", got)
 	}
 }
 
