@@ -77,8 +77,9 @@ func Complete(sys System, q Query) []Candidate {
 	return out
 }
 
-// arguments completes within one applet's invocation: the view IS the
-// target's closure-true schema, the words are walked to find the
+// arguments completes within one applet's invocation: the view IS
+// the schema true to the target's resolved service set, the words
+// are walked to find the
 // parse state at the cursor, and candidates are emitted from that
 // state.
 func arguments(src Source, words []string, current string) []Candidate {

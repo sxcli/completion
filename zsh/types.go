@@ -40,7 +40,7 @@ import (
 type Completion struct {
 	// Sys hands out target-scoped introspection views — built from
 	// the catalog snapshot alone, deterministic and environment-free;
-	// this closure ejects like any other.
+	// this service's own resolved service set ejects like any other.
 	Sys system.System `inject:""`
 	cfg config
 }

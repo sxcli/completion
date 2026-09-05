@@ -51,7 +51,8 @@ eval "$(ls completionbash --script)"
 - **Applet names** — the first word of a multi-applet binary, public
   applets only.
 - **Argument names** — long forms of the dispatched applet's whole
-  closure, core arguments included; already-used scalars drop out,
+  resolved service set, core arguments included; already-used scalars
+  drop out,
   repeatable slice arguments stay.
 - **Declared value domains** — a field with `Allowed` metadata
   completes exactly its legal values; the same declaration the
@@ -67,7 +68,8 @@ Zsh additionally renders each candidate's description from the
 `usage:` text and `Doc` metadata.
 
 Everything is computed per keystroke against the real configuration:
-an `--enable` already typed on the line changes the closure — and the
+an `--enable` already typed on the line changes the resolved service
+set — and the
 completions with it.
 
 ## How it works

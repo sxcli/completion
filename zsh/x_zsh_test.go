@@ -123,7 +123,7 @@ func TestSmokeFileDirective(t *testing.T) {
 func TestSmokeServiceIDs(t *testing.T) {
 	out := query(t, "completionzsh", "--cword", "2", "--current", "", "--", "srv", "--disable", "")
 	if !strings.Contains(out, "srv\n") || strings.Contains(out, "system\n") {
-		t.Errorf("service id candidates must be the TARGET's closure only: %q", out)
+		t.Errorf("service id candidates must be the TARGET's resolved service set only: %q", out)
 	}
 }
 
