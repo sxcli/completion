@@ -201,18 +201,22 @@ func TestArgCandidatesCarryDocs(t *testing.T) {
 	}
 }
 
-func TestBarePositionalSilencesArguments(t *testing.T) {
-	// the strict parser refuses arguments after a pending bare token
-	// ("positionals must come last") — offering names there would
-	// complete straight into a parse error
+func TestSilenceBeginsAtTheTerminator(t *testing.T) {
+	// bare tokens interleave with arguments, so passing one silences
+	// nothing — argument names stay on offer
 	src := &fakeSource{single: "solo", infos: demoInfos()}
-	if got := Complete(src, Query{Words: []string{"datafile"}, Current: "--"}); len(got) != 0 {
-		t.Errorf("names after a bare positional must not be offered: %v", got)
+	if got := Complete(src, Query{Words: []string{"datafile"}, Current: "--"}); len(got) == 0 {
+		t.Error("names after a bare positional stay on offer")
 	}
-	if got := Complete(src, Query{Words: []string{"datafile"}, Current: "--log-level="}); len(got) != 0 {
-		t.Errorf("joined values after a bare positional must not be offered: %v", got)
+	if got := Complete(src, Query{Words: []string{"datafile"}, Current: "--log-level="}); len(got) == 0 {
+		t.Error("joined values after a bare positional stay on offer")
 	}
-	// a bare word that is a pending argument's VALUE is not positional
+	// a bare -- is the parser's single escape: everything after is
+	// positional data and completion goes silent
+	if got := Complete(src, Query{Words: []string{"--"}, Current: "--log"}); len(got) != 0 {
+		t.Errorf("past the terminator nothing is offered: %v", got)
+	}
+	// a bare word that is a pending argument's VALUE is consumed
 	src2 := &fakeSource{single: "solo", infos: demoInfos()}
 	if got := Complete(src2, Query{Words: []string{"--log-level", "info"}, Current: "--"}); len(got) == 0 {
 		t.Error("a consumed value must not silence completion")

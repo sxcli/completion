@@ -95,8 +95,8 @@ func arguments(src Source, words []string, current string) []Candidate {
 			short[infos[i].Short] = &infos[i]
 		}
 	}
-	pending, positional, bare, used := walk(words, long, short)
-	if !positional && !bare {
+	pending, positional, used := walk(words, long, short)
+	if !positional {
 		name, joinedValue, joined := strings.Cut(strings.TrimPrefix(current, "--"), "=")
 		if pending != nil {
 			out = values(src, pending, current)
@@ -130,14 +130,12 @@ func arguments(src Source, words []string, current string) []Candidate {
 // walk replays the words before the cursor against the schema exactly
 // as the parser would read them, returning the argument left expecting
 // a value (never a bool — bools take values only =-joined), whether a
-// bare -- put the cursor in positional land, whether a bare positional
-// word already passed (the strict parser refuses arguments after one,
-// so completion goes silent rather than offer what cannot parse), and
-// which long names were already consumed.
-func walk(words []string, long, short map[string]*fw.ArgInfo) (*fw.ArgInfo, bool, bool, map[string]bool) {
+// bare -- put the cursor in positional land (the parser's single
+// escape: bare tokens interleave freely with arguments, so passing
+// one silences nothing), and which long names were already consumed.
+func walk(words []string, long, short map[string]*fw.ArgInfo) (*fw.ArgInfo, bool, map[string]bool) {
 	var pending *fw.ArgInfo
 	positional := false
-	bare := false
 	used := map[string]bool{}
 	for k := 0; k < len(words) && !positional; k++ {
 		w := words[k]
@@ -165,11 +163,12 @@ func walk(words []string, long, short map[string]*fw.ArgInfo) (*fw.ArgInfo, bool
 					}
 				}
 			}
-		} else {
-			bare = true // positional data in passing
 		}
+		// a bare word is positional data in passing: the parser
+		// accepts arguments on either side of it, so the walk just
+		// moves on
 	}
-	return pending, positional, bare, used
+	return pending, positional, used
 }
 
 // values emits the candidates for one field's value position, prefix
