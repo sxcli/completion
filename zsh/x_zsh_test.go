@@ -29,6 +29,7 @@ import (
 
 	_ "sxcli.dev/completion/zsh"
 	"sxcli.dev/fw"
+	_ "sxcli.dev/fw/controls"
 )
 
 const personality = "SXCLI_COMPLETION_ZSH_SMOKE"
@@ -57,9 +58,6 @@ func TestMain(m *testing.M) {
 				},
 			}).
 			Register()
-		// the smoke exercises --disable completion, so the binary
-		// opts into the controls like any real control-using one
-		fw.Enable(fw.FeatureDisable, fw.FeatureEnable, fw.FeatureOverride)
 		fw.Main() // never returns
 	}
 	os.Exit(m.Run())
