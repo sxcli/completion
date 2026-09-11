@@ -23,6 +23,7 @@ import (
 	"sxcli.dev/completion/engine"
 	genscript "sxcli.dev/completion/script"
 	"sxcli.dev/fw"
+	"sxcli.dev/fw/system"
 )
 
 // ID is the package's public handle: name it in a composition's
@@ -51,7 +52,7 @@ func (c *Completion) Run() int {
 	if c.cfg.Script {
 		script(os.Stdout, c.Sys.Introspector(""), os.Args[0])
 	} else {
-		answer(os.Stdout, c.Sys, c.cfg, c.cfg.Words)
+		answer(os.Stdout, sysAdapter{c.Sys}, c.cfg, c.cfg.Words)
 	}
 	return 0
 }
@@ -102,6 +103,20 @@ func script(w io.Writer, src engine.Source, argv0 string) {
 // cursor, ask the engine, print _describe pairs. Values have their
 // colons escaped (the _describe separator); the description is the
 // candidate's one-line doc rendered through Tr, zsh's whole point.
+
+// sysAdapter bridges the framework's System to the engine's: the
+// interfaces are structurally identical but Go return types must
+// match nominally, and the typed-nil trap needs the explicit check.
+type sysAdapter struct{ sys system.System }
+
+func (a sysAdapter) Introspector(applet string) engine.Source {
+	v := a.sys.Introspector(applet)
+	if v == nil {
+		return nil
+	}
+	return v
+}
+
 func answer(w io.Writer, sys engine.System, cfg config, words []string) {
 	q := engine.Query{Applet: cfg.Applet, Current: cfg.Current}
 	if cfg.CWord >= 1 && cfg.CWord <= len(words) {

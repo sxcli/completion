@@ -38,6 +38,7 @@ type smokeCfg struct {
 	Version uint32 `json:"version"`
 	Level   string `json:"level" conf:"level" usage:"verbosity"`
 	Out     string `json:"out" conf:"out" usage:"log target"`
+	Input   string `json:"input" pos:"0,optional" usage:"input file"`
 }
 
 type smokeApplet struct{ cfg smokeCfg }
@@ -55,6 +56,7 @@ func TestMain(m *testing.M) {
 				Fields: map[string]any{
 					"Level": fw.FieldMetadata[string]{Allowed: []string{"debug", "info", "warn"}},
 					"Out":   fw.FieldMetadata[string]{Allowed: []string{"unix:/dev/log", "tcp:remote"}},
+					"Input": fw.FieldMetadata[string]{Hint: fw.HintFile},
 				},
 			}).
 			Register()
@@ -95,6 +97,15 @@ func TestSmokeArgumentNamesCarryDescriptions(t *testing.T) {
 	out := query(t, "completionzsh", "--cword", "1", "--current", "--le", "--", "srv", "--le")
 	if out != "--level:verbosity\n" {
 		t.Errorf("describe pair wrong: %q", out)
+	}
+}
+
+func TestSmokePositionalFiles(t *testing.T) {
+	// an empty bare position belongs to the HintFile pos:"0" slot —
+	// zsh's native file completion, end to end
+	out := query(t, "completionzsh", "--cword", "1", "--current", "", "--", "srv", "")
+	if out != "\x01files\n" {
+		t.Errorf("positional file directive wrong: %q", out)
 	}
 }
 

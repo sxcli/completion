@@ -17,17 +17,19 @@ package engine
 import (
 	"reflect"
 	"strings"
+	conf "sxcli.dev/conf/engine"
 	"testing"
 
 	"sxcli.dev/fw"
 )
 
 type fakeSource struct {
-	applets  []string
-	single   string // "" = multi-applet mode
-	services []string
-	infos    []fw.ArgInfo
-	asked    string // target name Introspector was asked for
+	positionals []conf.PosInfo
+	applets     []string
+	single      string // "" = multi-applet mode
+	services    []string
+	infos       []fw.ArgInfo
+	asked       string // target name Introspector was asked for
 }
 
 func (s *fakeSource) Applets() []string          { return s.applets }
@@ -40,6 +42,8 @@ func (s *fakeSource) SingleApplet() (string, bool) {
 func (s *fakeSource) Arguments(args []string) []fw.ArgInfo {
 	return s.infos
 }
+
+func (s *fakeSource) Positionals() []conf.PosInfo { return s.positionals }
 
 // the fake doubles as its own System: every target answers the same
 // view, recording the name asked for.
@@ -154,12 +158,65 @@ func TestPendingServiceIDsFromRegistry(t *testing.T) {
 
 func TestBoolNeverPendingButEqualsCompletes(t *testing.T) {
 	src := &fakeSource{single: "solo", infos: demoInfos()}
-	if got := Complete(src, Query{Words: []string{"--debug"}}); len(got) != 0 {
-		t.Errorf("bool must not leave a pending value: %v", got)
+	// a bool leaves no pending value; with no positional slots the
+	// bare position offers argument names, never --debug's values
+	got := Complete(src, Query{Words: []string{"--debug"}})
+	for _, cand := range got {
+		if cand.Kind != KindArg {
+			t.Errorf("bool must not leave a pending value: %v", got)
+		}
 	}
-	got := Complete(src, Query{Current: "--debug=t"})
+	got = Complete(src, Query{Current: "--debug=t"})
 	if vals(got) != "true" {
 		t.Errorf("bool = completion wrong: %v", got)
+	}
+}
+
+func TestPositionalSlotCompletion(t *testing.T) {
+	src := &fakeSource{single: "solo", infos: demoInfos(), positionals: []conf.PosInfo{
+		{Name: "input", Hint: conf.HintFile},
+		{Name: "mode", Allowed: []any{"fast", "slow"}},
+		{Name: "extras", Hint: conf.HintFile, Rest: true},
+	}}
+	// an empty bare position belongs to slot 0: native file completion
+	if got := Complete(src, Query{}); len(got) != 1 || got[0].Kind != KindFiles {
+		t.Errorf("a HintFile slot must emit the files directive: %v", got)
+	}
+	// one bare word filled — the domain slot answers, prefix filtered
+	if got := Complete(src, Query{Words: []string{"in.txt"}, Current: "f"}); vals(got) != "fast" {
+		t.Errorf("a domain slot must offer its values: %v", got)
+	}
+	// interleaved arguments do not disturb the slot count: info is
+	// --log-level's value, not a positional
+	if got := Complete(src, Query{Words: []string{"--log-level", "info", "in.txt"}}); vals(got) != "fast,slow" {
+		t.Errorf("value words must not count as slots: %v", got)
+	}
+	// indexed slots exhausted: rest collects forever
+	if got := Complete(src, Query{Words: []string{"a", "fast", "x", "y"}}); len(got) != 1 || got[0].Kind != KindFiles {
+		t.Errorf("rest territory must keep the rest slot's hint: %v", got)
+	}
+	// past the terminator the same slots answer
+	if got := Complete(src, Query{Words: []string{"--"}}); len(got) != 1 || got[0].Kind != KindFiles {
+		t.Errorf("the terminator does not silence hinted slots: %v", got)
+	}
+	// a dash current still asks for argument names
+	got := Complete(src, Query{Current: "--lo"})
+	if len(got) == 0 || got[0].Kind != KindArg {
+		t.Errorf("a dash current is argument land: %v", got)
+	}
+}
+
+func TestOpenSlotSilentAndExhaustionOffersNames(t *testing.T) {
+	src := &fakeSource{single: "solo", infos: demoInfos(), positionals: []conf.PosInfo{{Name: "plain"}}}
+	// the position is the slot's even with nothing to offer
+	if got := Complete(src, Query{}); len(got) != 0 {
+		t.Errorf("an open unhinted slot offers nothing: %v", got)
+	}
+	// every slot filled and no rest: a bare word can only become an
+	// argument, so the names come back
+	got := Complete(src, Query{Words: []string{"x"}})
+	if len(got) == 0 || got[0].Kind != KindArg {
+		t.Errorf("exhausted slots must fall back to argument names: %v", got)
 	}
 }
 

@@ -15,14 +15,37 @@
 package engine
 
 import (
-	"sxcli.dev/fw/system"
+	conf "sxcli.dev/conf/engine"
 )
 
-// Source is one target-scoped introspection view — the system
-// vocabulary IS the engine contract, by alias: the view the framework
-// hands out is exactly what completion consumes. Tests satisfy it
+// Source is one target-scoped introspection view — the engine's own
+// contract, declared here over the conf engine's schema types so
+// that NOTHING framework-shaped is required to satisfy it: fw's
+// system.Introspector does structurally, and so can any standalone
+// tool that answers these questions about itself. Tests satisfy it
 // with a fake.
-type Source = system.Introspector
+type Source interface {
+	// Applets lists the binary's public applets; a standalone tool
+	// answers its own name.
+	Applets() []string
+	// SingleApplet reports the applet that runs with no selector,
+	// when exactly one would.
+	SingleApplet() (string, bool)
+	// Services lists the target's resolved service set by operator
+	// name, the core leading; nil for the binary view.
+	Services() []string
+	// ConfigExtensions lists the accepted config file extensions.
+	ConfigExtensions() []string
+	// Describe returns the long-form description of a member, "" for
+	// anything outside the resolved service set.
+	Describe(ref string) string
+	// Arguments returns the target's argument schema; args are the
+	// words before the cursor, reserved and currently inert.
+	Arguments(args []string) []conf.ArgInfo
+	// Positionals returns the target's positional slots in order,
+	// indexed slots first, the rest collector (when declared) last.
+	Positionals() []conf.PosInfo
+}
 
 // System hands out target-scoped views by dispatch name: "" is the
 // binary view (applet listing), an unknown name is nil ("offer

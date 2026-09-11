@@ -30,7 +30,7 @@ import (
 // this line is the module's whole dependency on that fact, checked at
 // compile time (Source itself is an alias of system.Introspector:
 // the system vocabulary IS the engine contract).
-var _ engine.System = (system.System)(nil)
+var _ engine.System = sysAdapter{}
 
 // defaultBreaks is bash's stock COMP_WORDBREAKS, the assumption when a
 // query arrives without --breaks (manual invocation; the generated
@@ -64,7 +64,7 @@ func (c *Completion) Run() int {
 	if c.cfg.Script {
 		script(os.Stdout, c.Sys.Introspector(""), os.Args[0])
 	} else {
-		answer(os.Stdout, c.Sys, c.cfg, c.cfg.Words)
+		answer(os.Stdout, sysAdapter{c.Sys}, c.cfg, c.cfg.Words)
 	}
 	return 0
 }
@@ -113,6 +113,20 @@ func script(w io.Writer, src engine.Source, argv0 string) {
 // actually replace — everything after the last :/= break in the
 // current token (the __ltrim_colon_completions treatment, generalized
 // from the shipped bash-completion).
+
+// sysAdapter bridges the framework's System to the engine's: the
+// interfaces are structurally identical but Go return types must
+// match nominally, and the typed-nil trap needs the explicit check.
+type sysAdapter struct{ sys system.System }
+
+func (a sysAdapter) Introspector(applet string) engine.Source {
+	v := a.sys.Introspector(applet)
+	if v == nil {
+		return nil
+	}
+	return v
+}
+
 func answer(w io.Writer, sys engine.System, cfg config, raw []string) {
 	words, cur := reassemble(raw, cfg.CWord, cfg.Line, cfg.Breaks)
 	q := engine.Query{Applet: cfg.Applet}

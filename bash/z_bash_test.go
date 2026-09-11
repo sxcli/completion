@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"reflect"
 	"strings"
+	conf "sxcli.dev/conf/engine"
 	"testing"
 
 	"sxcli.dev/completion/engine"
@@ -26,12 +27,13 @@ import (
 )
 
 type fakeSource struct {
-	applets  []string
-	single   string
-	services []string
-	infos    []fw.ArgInfo
-	asked    string
-	words    []string
+	positionals []conf.PosInfo
+	applets     []string
+	single      string
+	services    []string
+	infos       []fw.ArgInfo
+	asked       string
+	words       []string
 }
 
 func (s *fakeSource) Applets() []string          { return s.applets }
@@ -45,6 +47,8 @@ func (s *fakeSource) Arguments(args []string) []fw.ArgInfo {
 	s.words = args
 	return s.infos
 }
+
+func (s *fakeSource) Positionals() []conf.PosInfo { return s.positionals }
 
 // the fake doubles as its own System: every target answers the same
 // view, recording the name asked for.
