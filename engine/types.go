@@ -49,8 +49,10 @@ type Source interface {
 
 // System hands out target-scoped views by dispatch name: "" is the
 // binary view (applet listing), an unknown name is nil ("offer
-// nothing"). The framework's system.System satisfies it structurally
-// — this interface is the honest ledger of what the module needs.
+// nothing"). The framework's system.System satisfies it — its
+// ArgInfo and PosInfo are aliases of the conf engine's types, so the
+// method sets line up exactly — and this interface records what the
+// module needs, nothing more.
 type System interface {
 	Introspector(applet string) Source
 }
