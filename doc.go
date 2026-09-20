@@ -12,14 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package completion provides shell completion for binaries built on
-// sxcli.dev/fw, as an ordinary ecosystem module: it consumes the
+// Package completion provides shell completion for binaries built
+// on sxcli.dev/fw, as an ordinary ecosystem module: it consumes the
 // framework's Introspector API and registers one System applet per
-// supported shell — nothing here is, or needs to be, part of the core.
+// supported shell (binary machinery invoked by the generated shell
+// scripts, never typed by a person) — nothing here is, or needs to
+// be, part of the core.
 //
-// Each shell lives in its own package and catalogs one service; the
-// composition names what it takes by ID, like every other sxcli
-// service — a binary links only the shells it wants to support:
+// Each shell lives in its own package and registers one service; a
+// binary names the shells it accepts by ID, like every other sxcli
+// service, and links only the shells it wants to support:
 //
 //	import (
 //	    "sxcli.dev/completion/bash"
@@ -28,13 +30,15 @@
 //
 //	fw.Builder().Accept(bash.ID, zsh.ID /* , … */).Main()
 //
-// (Solo and fw.Main() compositions accept everything cataloged, so
+// (Solo and fw.Main() binaries accept everything registered, so
 // single-applet binaries just import and go.)
 //
-// The shared candidate computation is the public engine package and
-// the --script generation policy is the public script package; the
-// per-shell packages are thin adapters owning only their registration
-// script template and answer encoding. Third-party shell adapters
-// build on the same two packages — see the engine package
-// documentation.
+//   - The shared candidate computation lives in the public engine
+//     package.
+//   - The shared --script generation policy lives in the public
+//     script package.
+//   - The per-shell packages are thin adapters owning only their
+//     shell's registration-script template and answer encoding.
+//   - Third-party shell adapters build on the same two packages —
+//     see the engine package documentation.
 package completion
