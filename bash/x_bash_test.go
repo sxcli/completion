@@ -190,3 +190,53 @@ printf '%s\n' "${COMPREPLY[@]}"
 		t.Errorf("COMPREPLY wrong: %q", out.String())
 	}
 }
+
+// queryEnv is query with extra environment variables for the
+// re-executed application; later entries override os.Environ.
+func queryEnv(t *testing.T, env []string, args ...string) string {
+	t.Helper()
+	exe, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command(exe, args...)
+	cmd.Env = append(append(os.Environ(), personality+"=1"), env...)
+	var out, errb bytes.Buffer
+	cmd.Stdout, cmd.Stderr = &out, &errb
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("re-exec failed: %v\nstderr:\n%s", err, errb.String())
+	}
+	return out.String()
+}
+
+// Completion answers from the catalog alone: a real config file in
+// the user tier must not change a single candidate. The same query
+// runs against an empty XDG home and against one carrying a config
+// file for this binary; the answers are identical, keystroke for
+// keystroke.
+func TestSmokeXDGRedirectChangesNothing(t *testing.T) {
+	empty := t.TempDir()
+	full := t.TempDir()
+	exe, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := filepath.Join(full, fw.BinaryBasename(exe))
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	doc := []byte(`{"srv": {"version": 1, "level": "warn"}}`)
+	if err := os.WriteFile(filepath.Join(dir, "config.json"), doc, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	args := []string{"completionbash", "--cword", "2", "--line", "srv --level ", "--breaks", breaks,
+		"--", "srv", "--level", ""}
+	bare := queryEnv(t, []string{"XDG_CONFIG_HOME=" + empty}, args...)
+	withFile := queryEnv(t, []string{"XDG_CONFIG_HOME=" + full}, args...)
+	if bare != withFile {
+		t.Errorf("a user-tier config file changed the completion output:\nempty: %q\nwith file: %q", bare, withFile)
+	}
+	if bare != "debug\ninfo\nwarn\n" {
+		t.Errorf("the candidates themselves are wrong: %q", bare)
+	}
+}

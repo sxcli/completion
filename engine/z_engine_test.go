@@ -279,3 +279,37 @@ func TestSilenceBeginsAtTheTerminator(t *testing.T) {
 		t.Error("a consumed value must not silence completion")
 	}
 }
+
+// nilViewSystem serves only the binary view (the "" selector);
+// every named target gets nil — the shape fw produces for an
+// unknown name, a non-applet, or a System applet.
+type nilViewSystem struct{ binary *fakeSource }
+
+func (s *nilViewSystem) Introspector(applet string) Source {
+	if applet == "" {
+		return s.binary
+	}
+	return nil
+}
+
+// allNil is a System with nothing behind it: every selector, the
+// binary view included, gets nil.
+type allNil struct{}
+
+func (allNil) Introspector(string) Source { return nil }
+
+// A nil view is a complete answer: Complete offers nothing and
+// never panics — through an explicit target, a selector word, and
+// the missing binary view alike.
+func TestNilViewsOfferNothing(t *testing.T) {
+	sys := &nilViewSystem{binary: &fakeSource{applets: []string{"app"}}}
+	if got := Complete(sys, Query{Applet: "ghost"}); len(got) != 0 {
+		t.Errorf("a nil target view must offer nothing: %v", got)
+	}
+	if got := Complete(sys, Query{Words: []string{"ghost"}, Current: "-"}); len(got) != 0 {
+		t.Errorf("a nil view behind a selector word must offer nothing: %v", got)
+	}
+	if got := Complete(allNil{}, Query{}); len(got) != 0 {
+		t.Errorf("a nil binary view must offer nothing: %v", got)
+	}
+}
