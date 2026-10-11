@@ -1,6 +1,6 @@
 module sxcli.dev/completion
 
-go 1.26.4
+go 1.27.0
 
 require (
 	sxcli.dev/conf v0.1.1
